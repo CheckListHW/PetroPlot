@@ -241,9 +241,9 @@ class Window():
         self.draw_pads()
 
     def add_chart(self, pad):
-        pad.add_charts(Chart(self.app.curves[self.pad_choose.get()].get('dots'),
-                             name=self.pad_choose.get(),
-                             unit=self.app.curves.get(self.pad_choose.get()).get('unit')))
+        pad.add_chart(Chart(self.app.curves[self.pad_choose.get()].get('dots'),
+                            name=self.pad_choose.get(),
+                            unit=self.app.curves.get(self.pad_choose.get()).get('unit')))
 
     def draw_pads(self):
 
