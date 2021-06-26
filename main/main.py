@@ -133,7 +133,7 @@ class App:
         FLD = las.sections.get('Well').__getattr__('FLD').__getitem__('value')
 
         well_name = DATE + '  ' + COUNTRY + '   ' + FLD + '   ' + ORIGINALWELLNAME
-
+        print(well_name)
         self.root = root
 
         self.pads_frame = tkinter.LabelFrame(self.root, text=well_name)
@@ -236,7 +236,7 @@ class Window():
     root.geometry('1920x900+-10+0')
 
     def __init__(self):
-        self.head_frame = tkinter.LabelFrame(self.root, text='head_frame')
+        self.head_frame = Frame(self.root)
         self.head_frame.pack(side=BOTTOM)
 
         self.main_scale_frame = tkinter.LabelFrame(self.root, text='Масштаб')
@@ -254,10 +254,15 @@ class Window():
         self.root.mainloop()
 
     def draw_pad_choose_menu(self):
-        Button(self.head_frame, text='>', command=self.pads_move_right).pack(side=RIGHT)
-        Button(self.head_frame, text='+', command=self.add_pad).pack(side=RIGHT)
-        Button(self.head_frame, text='<', command=self.pads_move_left).pack(side=LEFT)
-        OptionMenu(self.head_frame, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT)
+        move_frame = Frame(self.head_frame)
+        move_frame.pack(padx=10, side=RIGHT)
+        Button(move_frame, text='->', command=self.pads_move_right).pack(side=RIGHT)
+        Button(move_frame, text='<-', command=self.pads_move_left).pack(side=RIGHT)
+
+        add_pad_frame = Frame(self.head_frame)
+        add_pad_frame.pack(padx=10, side=RIGHT)
+        OptionMenu(add_pad_frame, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT)
+        Button(add_pad_frame, text='+', command=self.add_pad).pack(side=LEFT)
 
     def pads_move_right(self):
         self.app.set_first_show_pad(self.app.first_show_pad + 1)
@@ -327,7 +332,7 @@ class Window():
         for i in range(self.app.first_show_pad, len(self.app.pads)):
             pad_frame = self.app.get_or_create_pad_frame(i)
 
-            if len(pad_frame.pad_menu_frame.winfo_children()) is 0:
+            if len(pad_frame.pad_menu_frame.winfo_children()) == 0:
                 self.create_pad_menu(pad_frame.pad_menu_frame, i)
 
             pad_frame.reset()
