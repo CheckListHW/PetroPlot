@@ -13,7 +13,6 @@ class Chart:
     def __init__(self, dots, **kwargs):
         self.parametrs = {
             'color': 'black',
-            'unit': None,
             'type': 'line',
             'name': None,
         }

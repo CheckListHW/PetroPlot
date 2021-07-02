@@ -1,4 +1,4 @@
-import tkinter
+mport tkinter
 
 
 import lasio
