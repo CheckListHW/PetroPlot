@@ -1,12 +1,9 @@
 import tkinter
+from tkinter import *
 
 import lasio
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.transforms as trns
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-from tkinter import *
 
 
 class Chart:
@@ -124,7 +121,7 @@ class App:
 
     def __init__(self, filename, root):
         self.curves = {}
-        las = lasio.read(filename)
+        las = lasio.read(filename, encoding='utf-8')
 
         DATE = las.sections.get('Well').__getattr__('DATE').__getitem__('value')
         COUNTRY = las.sections.get('Well').__getattr__('COUNTRY').__getitem__('value')
