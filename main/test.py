@@ -1,57 +1,33 @@
-mport tkinter
+import json
+
+'''
+
+ps_total = {'load.connections.aborts': 'Total', 'load.connections.running': 'Total',
+            'load.connections.attempts_ps': 'Per Second', 'load.connections.succeeds_ps': 'Per Second',
+            'load.scenarios.succeeds': 'Total', 'load.actions.attempts_ps': 'Per Second', 'load.actions.fails': 'Total'}
+
+Load = {'load.connections.aborts': 'Load', 'load.connections.running': 'Load', 'load.connections.attempts_ps': 'Load', 'load.connections.succeeds_ps': 'Load', 'load.scenarios.succeeds': 'Load', 'load.actions.attempts_ps': 'Load', 'load.actions.fails': 'Load'}
+
+merged = [
+    {'name': key, 'kind': ps_total[key], 'category': Load[key]}
+    for key in ps_total.keys()
+]
+
+res = json.dumps(merged,
+                 sort_keys=True, indent=4, separators=(',', ': '))
+print(res)
+
+'''
+ps_total = {'load.connections.aborts': 'Total', 'load.connections.running': 'Total',
+            'load.connections.attempts_ps': 'Per Second', 'load.connections.succeeds_ps': 'Per Second',
+            'load.scenarios.succeeds': 'Total', 'load.actions.attempts_ps': 'Per Second', 'load.actions.fails': 'Total'}
+
+import os
+if os.path.isfile('json.json'):
+    os.remove('json.json')
+
+jsonFile = open("json.json", mode="x")
+json.dump(ps_total, jsonFile)
+jsonFile.close()
 
 
-import lasio
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.transforms as trns
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
-import random
-
-from tkinter import *
-
-
-
-
-
-class Window():
-    root = Tk()
-
-    def __init__(self):
-        self.pad_choose = StringVar(self.root)
-        self.pad_choose.set(list(['aaa', 'nnnn']))  # default value
-
-        self.head_frame = tkinter.LabelFrame(self.root, text='head_frame')
-        self.head_frame.pack(side=BOTTOM)
-
-        self.main_scale_frame = tkinter.LabelFrame(self.root, text='main_scale_frame')
-        self.main_scale_frame.pack(side=LEFT)
-
-        self.pads_frame = tkinter.LabelFrame(self.root, text='pads_frame')
-        self.pads_frame.pack(side=LEFT)
-
-        add_butt = Button(self.head_frame, text='add', command=self.add)
-        del_butt = Button(self.head_frame, text='del', command=self.del_butt)
-
-        add_butt.pack()
-        del_butt.pack()
-
-        self.root.mainloop()
-
-
-    def add(self,):
-        self.pads_frame.destroy()
-
-
-        self.pads_frame = tkinter.LabelFrame(self.root, text='pads_frame')
-        self.pads_frame.pack(side=LEFT)
-        Button(self.pads_frame, text='add', command=self.add).pack()
-        print('add')
-
-    def del_butt(self):
-        print('del')
-
-
-if __name__ == '__main__':
-    window = Window()
