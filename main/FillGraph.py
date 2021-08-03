@@ -16,8 +16,6 @@ class FillGraph:
         fig, ax = plt.subplots()
         count = 0
         for x in self.x:
-            print(x)
-            print(self.y[count])
             ax.plot(x, self.y[count], color=self.colorLine[count], linewidth=self.lineWidth[count])
             ax.fill(x, self.y[count], color=self.colorFill[count], alpha=self.alpha[count])
             count += 1
