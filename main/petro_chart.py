@@ -17,25 +17,33 @@ BASE_DIR = os.path.dirname(__file__)
 class Chart:
     def __init__(self, dots, **kwargs):
         self.type_line = None
+        self.fill_side = None
         self.dots = dots
 
         self.parametrs = {
             'color': 'black',
             'type': 'line',
             'name': None,
+            'unit': None,
             'borders': [np.nanmin(self.dots), np.nanmax(self.dots)],
             'borders_color': ['b'],
-            'side_left': False,
+            'fill_side': 'right',
         }
 
         for key, value in kwargs.items():
             if key in self.parametrs:
                 self.parametrs[key] = value
+        print(self.parametrs)
 
     def get_type_line(self):
         if self.type_line is None:
             return self.parametrs.get('type')
         return self.type_line.get()
+
+    def get_fill_side(self):
+        if self.fill_side is None:
+            return self.parametrs.get('fill_side')
+        return self.fill_side.get()
 
 
 class Cell:
@@ -60,7 +68,7 @@ class Cell:
 
             measure = Label(self.cell_frame, bg='gray', text=measure)
             measure.place(height=20)
-            measure.grid(row=2, column=1, sticky=W + E)
+            measure.grid(row=2, column=0)
 
             label_4 = Label(self.cell_frame, bg='gray', text=rightValue)
             label_4.place(height=20)
@@ -277,6 +285,12 @@ class App:
 
 
 class Window():
+    plt_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+                  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+                  ]
+
     def __init__(self, root_widget):
         self.i = 0
         self.root = root_widget
@@ -293,6 +307,38 @@ class Window():
 
         self.draw_pad_choose_menu()
         self.draw_scale_pad()
+        self.draw_pads()
+        self.debug()
+
+    def debug(self):
+        self.progress_bar_start()
+        filename = 'C:/Users/kosac/PycharmProjects/petro_chart/main/test_template.json'
+
+        with open(filename) as f:
+            template = json.load(f)
+            for file in template['files']:
+                self.app.add_curves_from_file(file)
+
+            for pad in template['pads']:
+                new_pad = self.app.add_pad()
+                new_pad.log.set(pad['log'])
+                new_pad.type.set(pad['type'])
+                new_pad.line_quantity.set(pad['line_quantity'])
+                for chart in pad['charts']:
+                    new_chart = Chart(self.app.curves[chart['name']].get('dots'),
+                                      name=chart['name'],
+                                      color=chart['color'],
+                                      type=chart['type'],
+                                      borders=chart['borders'],
+                                      borders_color=chart['borders_color'],
+                                      fill_side=chart['fill_side'],
+                                      unit=self.app.curves.get(chart['name']).get('unit'))
+
+                    new_pad.add_chart(new_chart)
+
+        self.progress_bar_stop()
+
+        self.draw_pad_choose_menu()
         self.draw_pads()
 
     def add_las_file(self):
@@ -312,7 +358,6 @@ class Window():
         filename = filedialog.askopenfilename(title='Открыть файл', initialdir=os.getcwd(),
                                               filetypes=[('JSON files', '.json')])
 
-
         with open(filename) as f:
             template = json.load(f)
             for file in template['files']:
@@ -330,6 +375,7 @@ class Window():
                                       type=chart['type'],
                                       borders=chart['borders'],
                                       borders_color=chart['borders_color'],
+                                      fill_side=chart['fill_side'],
                                       unit=self.app.curves.get(chart['name']).get('unit'))
 
                     new_pad.add_chart(new_chart)
@@ -354,7 +400,8 @@ class Window():
             for chart in pad.charts:
                 parametrs = {'name': chart.parametrs.get('name'), 'color': chart.parametrs.get('color'),
                              'type': chart.get_type_line(), 'borders': chart.parametrs.get('borders'),
-                             'borders_color': chart.parametrs.get('borders_color')}
+                             'borders_color': chart.parametrs.get('borders_color'),
+                             'fill_side': chart.fill_side()}
 
                 pad_info['charts'].append(parametrs)
 
@@ -366,8 +413,6 @@ class Window():
         jsonFile = open(filename, mode='x')
         json.dump(main_json, jsonFile)
         jsonFile.close()
-
-
 
     def progress_bar_start(self):
         self.progress_bar.pack()
@@ -507,8 +552,10 @@ class Window():
             if chart.get_type_line() == 'fill':
                 xx, yy = self.split_mass_nan(x, y)
                 for i in range(len(xx)):
-                    xx[i].append(main_max)
+                    side_fill = main_min if chart.get_fill_side() == 'left' else main_max
+                    xx[i].append(side_fill)
                     yy[i].append(yy[i][-1])
+
                     pad_frame.chart.fill_between(xx[i], yy[i], y2=min(yy[i]), color=chart_line[0].get_color(),
                                                  alpha=0.5)
 
@@ -640,9 +687,24 @@ class Window():
 
         self.pad_edit_window = Toplevel(self.root)
         self.pad_edit_window.title('Настройки планшета: ' + str(pad_number + 1))
-        self.pad_edit_window.wm_geometry('400x400')
+        # self.pad_edit_window.wm_geometry('400x400')
         self.pad_edit_window.protocol('WM_DELETE_WINDOW', lambda j=self.pad_edit_window: self.pre_destroy(j))
 
+        self.update_pad_edit_window(pad_number)
+
+    def show_choose_color_window(self, chart, pad_number):
+        if hasattr(self, 'pad_edit_windowchoose_color_window'):
+            self.choose_color_window.destroy()
+
+        self.choose_color_window = Toplevel(self.root)
+        self.choose_color_window.title('Выбор Цвета')
+        for i in self.plt_colors:
+            Button(self.choose_color_window, bg=i,
+                   command=lambda j=i: self.set_new_color_chart(j, chart, pad_number)).pack(side=LEFT)
+        self.choose_color_window.protocol('WM_DELETE_WINDOW', lambda j=self.choose_color_window: self.pre_destroy(j))
+
+    def set_new_color_chart(self, color, chart, pad_number):
+        chart.parametrs['color'] = color
         self.update_pad_edit_window(pad_number)
 
     def update_pad_edit_window(self, pad_number):
@@ -650,30 +712,123 @@ class Window():
             widget.destroy()
 
         chart_edit = Frame(self.pad_edit_window)
-        chart_edit.pack(side=TOP)
+        chart_edit.pack(side=TOP, padx=5, pady=10)
 
         chart_add = Frame(chart_edit)
-        chart_add.pack(side=TOP)
+        chart_add.pack(side=TOP, fill='both')
 
-        OptionMenu(chart_add, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT)
-        Button(chart_add, text='+', command=lambda j=pad_number: self.add_chart_to_pad(j)).pack(side=RIGHT)
+        OptionMenu(chart_add, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT, padx=1)
+        Button(chart_add, text='+', command=lambda j=pad_number: self.add_chart_to_pad(j)).pack(side=LEFT)
+        Button(chart_add, text='⚙', command=lambda j=pad_number: self.show_pad_settings_window(j)).pack(side=RIGHT)
+
 
         for chart in self.app.pads[pad_number].charts:
             chart_delete = Frame(chart_edit)
             chart_delete.pack(side=TOP, fill='both')
 
+            Button(chart_delete, bg=chart.parametrs.get('color'),
+                   command=lambda j=chart: self.show_choose_color_window(j, pad_number)).pack(side=LEFT, padx=3)
+            Button(chart_delete, text='⚙',
+                   command=lambda j=chart: self.show_edit_chart_window(pad_number, j)).pack(side=LEFT)
             Label(chart_delete, text=chart.parametrs.get('name')).pack(side=LEFT)
+
             Button(chart_delete, text='X', command=lambda j=chart: self.pop_chart_from_pad(pad_number, j)).pack(
                 side=RIGHT)
 
-            if chart.type_line is None:
-                chart.type_line = StringVar(self.root)
-                chart.type_line.set(chart.parametrs.get('type'))
+            #if chart.type_line is None:
+            #    chart.type_line = StringVar(self.root)
+            #    chart.type_line.set(chart.parametrs.get('type'))
+            #    chart.fill_side = StringVar(self.root)
+            #    chart.fill_side.set(chart.parametrs.get('fill_side'))
+            #OptionMenu(chart_delete, chart.fill_side, *list(['left', 'right'])).pack(side=RIGHT)
+            #OptionMenu(chart_delete, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
 
-            OptionMenu(chart_delete, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
-            Frame(chart_delete, width=30, height=2, bg=chart.parametrs.get('color')).pack(side=RIGHT)
+      #chart_styles = Frame(self.pad_edit_window)
+      #chart_styles.pack(side=TOP)
 
-        chart_styles = Frame(self.pad_edit_window)
+      #pad_log = Frame(chart_styles)
+      #pad_log.pack(side=TOP)
+
+      #Label(pad_log, text='Логарифмическая шкала').pack(side=LEFT)
+      #Checkbutton(pad_log, variable=self.app.pads[pad_number].log).pack(side=LEFT)
+
+      #pad_grid = Frame(chart_styles)
+      #pad_grid.pack(side=TOP)
+
+      #Label(pad_grid, text='Количество линий').pack(side=LEFT)
+      #OptionMenu(pad_grid, self.app.pads[pad_number].line_quantity, *list(range(11))).pack(side=LEFT)
+
+      #pad_type = Frame(chart_styles)
+      #pad_type.pack(side=TOP)
+
+      #if self.app.pads[pad_number].type._tclCommands is None:
+      #    self.app.pads[pad_number].type.trace('w', lambda *args: self.edit_window_on_change(pad_number, *args))
+
+      #Label(pad_type, text='Тип кривой').pack(side=LEFT)
+      #OptionMenu(pad_type, self.app.pads[pad_number].type, *list(['line', 'row'])).pack(side=LEFT)
+
+      #if len(self.app.pads[pad_number].charts) == 0:
+      #    return
+
+      #if self.app.pads[pad_number].type.get() == 'row':
+      #    pad_border = LabelFrame(chart_styles, text='Добавление границ')
+      #    pad_border.pack(side=TOP)
+      #    border_value = StringVar(value=0)
+
+      #    add_pad_border = Frame(pad_border)
+      #    add_pad_border.pack(side=TOP)
+
+      #    Entry(add_pad_border, textvariable=border_value).pack(side=LEFT)
+      #    Button(add_pad_border, text='+', command=lambda j=border_value: self.add_pad_border(pad_number, j)).pack(
+      #        side=RIGHT)
+
+      #    for border in self.app.pads[pad_number].charts[0].parametrs['borders']:
+      #        pad_border_delete = Frame(pad_border)
+      #        pad_border_delete.pack(side=BOTTOM, fill='both')
+
+      #        Label(pad_border_delete, text=border).pack(side=LEFT)
+      #        Button(pad_border_delete, text='X',
+      #               command=lambda j=border: self.pop_border_from_pad(pad_number, j)).pack(side=RIGHT)
+      #        # Frame(pad_border_delete, width=30, height=2, bg=chart.parametrs.get('color')).pack(side=RIGHT)
+
+    def show_edit_chart_window(self, pad_number, chart):
+        if hasattr(self, 'edit_chart_window'):
+            self.edit_chart_window.destroy()
+
+        self.edit_chart_window = Toplevel(self.root)
+        self.edit_chart_window.title('Настройки кривой планшета: ' + str(pad_number + 1))
+        self.edit_chart_window.wm_geometry('400x400')
+        self.edit_chart_window.protocol('WM_DELETE_WINDOW', lambda j=self.edit_chart_window: self.pre_destroy(j))
+
+        frame_1 = Frame(self.edit_chart_window)
+        frame_1.pack(fill='both')
+
+        chart.type_line = StringVar(self.root)
+        chart.type_line.set(chart.parametrs.get('type'))
+
+        Label(frame_1, text='Тип линии:').pack(side=LEFT)
+        OptionMenu(frame_1, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
+
+        frame_2 = Frame(self.edit_chart_window)
+        frame_2.pack(fill='both')
+
+        chart.fill_side = StringVar(self.root)
+        chart.fill_side.set(chart.parametrs.get('fill_side'))
+
+        Label(frame_2, text='Сторона заливки:').pack(side=LEFT)
+        OptionMenu(frame_2, chart.fill_side, *list(['left', 'right'])).pack(side=RIGHT)
+
+        self.update_pad_edit_window(pad_number)
+
+    def show_pad_settings_window(self, pad_number):
+        if hasattr(self, 'pad_settings_window'):
+            self.pad_settings_window.destroy()
+
+        self.pad_settings_window = Toplevel(self.root)
+        self.pad_settings_window.title('Настройки кривой планшета: ' + str(pad_number + 1))
+        self.pad_settings_window.protocol('WM_DELETE_WINDOW', lambda j=self.pad_settings_window: self.pre_destroy(j))
+
+        chart_styles = Frame(self.pad_settings_window)
         chart_styles.pack(side=TOP)
 
         pad_log = Frame(chart_styles)
@@ -692,7 +847,7 @@ class Window():
         pad_type.pack(side=TOP)
 
         if self.app.pads[pad_number].type._tclCommands is None:
-            self.app.pads[pad_number].type.trace('w', lambda *args: self.edit_window_on_change(pad_number, *args))
+            self.app.pads[pad_number].type.trace('w', lambda *args: self.show_pad_settings_window(pad_number))
 
         Label(pad_type, text='Тип кривой').pack(side=LEFT)
         OptionMenu(pad_type, self.app.pads[pad_number].type, *list(['line', 'row'])).pack(side=LEFT)
@@ -719,7 +874,7 @@ class Window():
                 Label(pad_border_delete, text=border).pack(side=LEFT)
                 Button(pad_border_delete, text='X',
                        command=lambda j=border: self.pop_border_from_pad(pad_number, j)).pack(side=RIGHT)
-                # Frame(pad_border_delete, width=30, height=2, bg=chart.parametrs.get('color')).pack(side=RIGHT)
+        self.update_pad_edit_window(pad_number)
 
     def edit_window_on_change(self, p_n, *args):
         self.i += 1
