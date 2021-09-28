@@ -660,10 +660,13 @@ group1 = Frame(notebook)
 
 group2 = Frame(notebook)
 
+group3 = Frame(notebook)
+
 petro_chart = Window(group2)
 
 notebook.add(group1, text='Предварительный просмотр las файлов')
-notebook.add(group2, text='Просмотр планшетов с кривыми')
+notebook.add(group2, text='Планшет с входными данными')
+notebook.add(group3, text='Результаты калибровки')
 
 window.columnconfigure(0, weight=1)
 window.rowconfigure(1, weight=1)

@@ -19,6 +19,7 @@ class StolbGraph:
         self.y.append(y[0])
         self.color.append(colorLine[0])
 
+        borders = list(borders)
         for step in range(len(x)):
             for i in range(1, len(borders)):
                 if not -math.inf <= x[step] <= math.inf and empty is False:

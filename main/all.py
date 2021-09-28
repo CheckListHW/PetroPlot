@@ -397,9 +397,9 @@ class Window():
                         'line_quantity': pad.line_quantity.get(), 'charts': []}
 
             for chart in pad.charts:
-                parametrs = {'name': chart.parametrs.get('name'), 'color': chart.parametrs.get('color'),
-                             'type': chart.get_type_line(), 'borders': chart.parametrs.get('borders'),
-                             'borders_color': chart.parametrs.get('borders_color')}
+                parametrs = {'name': chart.parameters.get('name'), 'color': chart.parameters.get('color'),
+                             'type': chart.get_type_line(), 'borders': chart.parameters.get('borders'),
+                             'borders_color': chart.parameters.get('borders_color')}
 
                 pad_info['charts'].append(parametrs)
 
@@ -561,13 +561,13 @@ class Window():
             n_round = self.app.n_round(medium)
 
             new_cell_frame = Cell(pad_frame.cell_frame, False,
-                                  chart.parametrs.get('name'),
+                                  chart.parameters.get('name'),
                                   chart_line[0].get_color(),
                                   str(round(X_Lim[0], n_round)),
-                                  chart.parametrs.get('unit'),
+                                  chart.parameters.get('unit'),
                                   str(round(X_Lim[1], n_round)))
 
-            chart.parametrs['color'] = chart_line[0].get_color()
+            chart.parameters['color'] = chart_line[0].get_color()
 
             pad_frame.cell.append(new_cell_frame)
             pad_frame.pad_frame.pack(side=LEFT)
@@ -598,18 +598,18 @@ class Window():
         x, y = self.app.dots_range(chart.dots)
 
         fig_color, ax_color = plt.subplots()
-        if len(chart.parametrs['borders_color']) + 1 < len(chart.parametrs['borders']):
+        if len(chart.parameters['borders_color']) + 1 < len(chart.parameters['borders']):
             borders_color = []
-            for i in chart.parametrs['borders']:
+            for i in chart.parameters['borders']:
                 chart_line = ax_color.plot(1, 1)
                 borders_color.append(chart_line[0].get_color())
-            chart.parametrs['borders_color'] = borders_color
+            chart.parameters['borders_color'] = borders_color
 
         fig = pad_frame.fig
         ax = pad_frame.chart
 
-        a = StolbGraph(2, x, y, chart.parametrs['borders_color'],
-                       chart.parametrs['borders'], fig=fig, ax=ax)
+        a = StolbGraph(2, x, y, chart.parameters['borders_color'],
+                       chart.parameters['borders'], fig=fig, ax=ax)
         a.draw()
 
         X_Lim = [np.nanmin(x), np.nanmax(x)]
@@ -617,13 +617,13 @@ class Window():
         medium = abs(X_Lim[0] - X_Lim[1])
         n_round = self.app.n_round(medium)
         new_cell_frame = Cell(pad_frame.cell_frame, False,
-                              chart.parametrs.get('name'),
+                              chart.parameters.get('name'),
                               'blue',
                               str(round(X_Lim[0], n_round)),
-                              chart.parametrs.get('unit'),
+                              chart.parameters.get('unit'),
                               str(round(X_Lim[1], n_round)))
 
-        chart.parametrs['color'] = 'blue'
+        chart.parameters['color'] = 'blue'
         pad_frame.cell.append(new_cell_frame)
         pad_frame.pad_frame.pack(side=LEFT)
 
@@ -659,7 +659,7 @@ class Window():
         self.update_pad_edit_window(pad_number)
 
     def pop_border_from_pad(self, pad_number, value):
-        self.app.pads[pad_number].charts[0].parametrs['borders'].remove(value)
+        self.app.pads[pad_number].charts[0].parameters['borders'].remove(value)
         self.update_pad_edit_window(pad_number)
 
     def add_pad_border(self, pad_number, value):
@@ -673,9 +673,9 @@ class Window():
             self.app.open_error_window('Не указана линия!')
             return
 
-        self.app.pads[pad_number].charts[0].parametrs['borders'].append(border_value)
-        self.app.pads[pad_number].charts[0].parametrs['borders'] = \
-            sorted(self.app.pads[pad_number].charts[0].parametrs['borders'])
+        self.app.pads[pad_number].charts[0].parameters['borders'].append(border_value)
+        self.app.pads[pad_number].charts[0].parameters['borders'] = \
+            sorted(self.app.pads[pad_number].charts[0].parameters['borders'])
 
         self.update_pad_edit_window(pad_number)
 
@@ -707,16 +707,16 @@ class Window():
             chart_delete = Frame(chart_edit)
             chart_delete.pack(side=TOP, fill='both')
 
-            Label(chart_delete, text=chart.parametrs.get('name')).pack(side=LEFT)
+            Label(chart_delete, text=chart.parameters.get('name')).pack(side=LEFT)
             Button(chart_delete, text='X', command=lambda j=chart: self.pop_chart_from_pad(pad_number, j)).pack(
                 side=RIGHT)
 
             if chart.type_line is None:
                 chart.type_line = StringVar(self.root)
-                chart.type_line.set(chart.parametrs.get('type'))
+                chart.type_line.set(chart.parameters.get('type'))
 
             OptionMenu(chart_delete, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
-            Frame(chart_delete, width=30, height=2, bg=chart.parametrs.get('color')).pack(side=RIGHT)
+            Frame(chart_delete, width=30, height=2, bg=chart.parameters.get('color')).pack(side=RIGHT)
 
         chart_styles = Frame(self.pad_edit_window)
         chart_styles.pack(side=TOP)
@@ -757,7 +757,7 @@ class Window():
             Button(add_pad_border, text='+', command=lambda j=border_value: self.add_pad_border(pad_number, j)).pack(
                 side=RIGHT)
 
-            for border in self.app.pads[pad_number].charts[0].parametrs['borders']:
+            for border in self.app.pads[pad_number].charts[0].parameters['borders']:
                 pad_border_delete = Frame(pad_border)
                 pad_border_delete.pack(side=BOTTOM, fill='both')
 

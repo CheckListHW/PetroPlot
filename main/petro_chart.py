@@ -1,6 +1,8 @@
 import json
 import math
 import os
+import random
+import time
 from tkinter import *
 from tkinter import filedialog, ttk
 
@@ -8,7 +10,7 @@ import lasio
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
+from matplotlib import pyplot as plt
 from StolbGraph import StolbGraph
 
 BASE_DIR = os.path.dirname(__file__)
@@ -16,34 +18,64 @@ BASE_DIR = os.path.dirname(__file__)
 
 class Chart:
     def __init__(self, dots, **kwargs):
-        self.type_line = None
-        self.fill_side = None
         self.dots = dots
-
-        self.parametrs = {
-            'color': 'black',
-            'type': 'line',
-            'name': None,
-            'unit': None,
-            'borders': [np.nanmin(self.dots), np.nanmax(self.dots)],
-            'borders_color': ['b'],
-            'fill_side': 'right',
-        }
+        self.parameters = {'color': 'black', 'type': 'line', 'name': None, 'unit': None, 'borders_color': ['b'],
+                           'fill_side': 'right', 'min_border': float('nan'), 'max_border': float('nan'),
+                           'borders': {}}
 
         for key, value in kwargs.items():
-            if key in self.parametrs:
-                self.parametrs[key] = value
-        print(self.parametrs)
+            if key in self.parameters:
+                if value is not None:
+                    self.parameters[key] = value
+
+        self.type_line = StringVar(value=self.parameters.get('type'))
+        self.fill_side = StringVar(value=self.parameters.get('fill_side'))
+        self.min_border = StringVar(value=self.parameters.get('min_border'))
+        self.max_border = StringVar(value=self.parameters.get('max_border'))
+        self.parameters['borders'] = {-math.inf, math.inf}.union(self.parameters.get('borders'))
+
+
+    def get_dots_with_border(self):
+        border_dots = self.dots.copy()
+        min_border = float(self.get_min_border())
+        max_border = float(self.get_max_border())
+        if self.get_max_border() is not None:
+            for i in range(len(border_dots)):
+                border_dots[i] = max_border if border_dots[i] > max_border else border_dots[i]
+
+        if self.get_min_border() is not None:
+            for i in range(len(border_dots)):
+                border_dots[i] = min_border if border_dots[i] < min_border else border_dots[i]
+
+        return border_dots
 
     def get_type_line(self):
         if self.type_line is None:
-            return self.parametrs.get('type')
+            return self.parameters.get('type')
         return self.type_line.get()
 
     def get_fill_side(self):
         if self.fill_side is None:
-            return self.parametrs.get('fill_side')
+            return self.parameters.get('fill_side')
         return self.fill_side.get()
+
+    def get_min_border(self):
+        if self.min_border is not None:
+            value = self.min_border.get()
+        elif self.parameters.get('min_border') is not None:
+            value = self.parameters.get('min_border')
+        if str(value).isdigit():
+            return value
+        return -math.inf
+
+    def get_max_border(self):
+        if self.max_border is not None:
+            value = self.max_border.get()
+        elif self.parameters.get('max_border') is not None:
+            value = self.parameters.get('max_border')
+        if str(value).isdigit():
+            return value
+        return math.inf
 
 
 class Cell:
@@ -83,14 +115,13 @@ class Cell:
 
 class Pad:
     def __init__(self, frame):
-        self.log = BooleanVar(frame)
-        self.log.set(0)
+        self.log = BooleanVar(frame, value=0)
 
-        self.type = StringVar(frame)
-        self.type.set('line')
+        self.type = StringVar(frame, value='line')
 
-        self.line_quantity = StringVar(frame)
-        self.line_quantity.set(5)
+        self.width = IntVar(frame, value=3)
+
+        self.line_quantity = StringVar(frame, value=5)
         self.charts = []
 
     def add_chart(self, chart):
@@ -98,29 +129,39 @@ class Pad:
 
 
 class PadFrame:
-    def __init__(self, pads_frame):
+    i = 1
+
+    def __init__(self, pads_frame, width=None):
         self.cell = []
-        self.fig, self.chart = plt.subplots(nrows=1, ncols=1, figsize=(3, 8))
-        self.fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+        self.width = IntVar(value=3) if width is None else width
+        self.fig, self.chart = plt.subplots(nrows=1, ncols=1, figsize=(self.width.get(), 8))
+        self.fig.subplots_adjust(left=-0.003, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
-        self.pad_frame = Frame(pads_frame)  # , text='pad_frame')
+        self.pad_frame = Frame(pads_frame)
         self.pad_frame.pack(side=LEFT)
-
-        self.canvas_frame = Frame(self.pad_frame)  # , text='canvas_frame')
-        self.canvas_frame.pack(side=BOTTOM)
 
         self.cell_frame = Frame(self.pad_frame)  # , text='cell_frame')
         self.cell_frame.pack(side=TOP, fill='both')
+
+        self.canvas_frame = Frame(self.pad_frame)
+        self.canvas_frame.pack(side=TOP)
 
         self.pad_menu_frame = Frame(self.pad_frame)  # , text='pad_menu_frame')
         self.pad_menu_frame.pack(side=BOTTOM, fill='both')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
-        self.canvas.get_tk_widget().pack(side=BOTTOM)
+        self.canvas_get_tk_widget = self.canvas.get_tk_widget()
+        self.canvas_get_tk_widget.pack(side=BOTTOM)
 
     def update_chart(self):
-        self.canvas_frame.pack_forget()
-        self.canvas_frame.pack(side=BOTTOM)
+        self.i += 1
+        if self.width != self.fig.get_figwidth():
+            self.canvas_get_tk_widget.destroy()
+            plt.close(self.canvas.figure)
+            self.fig.set_size_inches(self.width.get(), self.fig.get_figheight())
+            self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
+            self.canvas_get_tk_widget = self.canvas.get_tk_widget()
+            self.canvas_get_tk_widget.pack()
         self.canvas.draw()
 
     def add_empty_cell(self, quntity_empty_cell):
@@ -187,14 +228,14 @@ class App:
         self.end = self.max_y = max(las.items()[0][1])
 
         for item in las.items():
-            self.curves[str(item[0]) + ' ' + short_filename] = {
+            self.curves['\'' + str(item[0]) + '\' ' + short_filename] = {
                 'unit': las.sections.get('Curves').__getitem__(item[0]).__getitem__('unit'),
                 'dots': item[1],
             }
 
     def get_or_create_pad_frame(self, pad_number):
         if pad_number >= len(self.pad_frames):
-            self.pad_frames.append(PadFrame(self.pads_frame))
+            self.pad_frames.append(PadFrame(self.pads_frame, width=self.pads[pad_number].width))
             return self.pad_frames[-1]
         return self.pad_frames[pad_number]
 
@@ -224,8 +265,8 @@ class App:
         self.set_new_border(middle_y - scale, middle_y + scale)
 
     def set_new_border(self, new_start, new_end):
-        if abs(new_end - new_start) < 10:
-            return
+        if abs(new_end - new_start) < 10 or (self.start == new_start and self.end == new_end):
+            return False
 
         if new_end < self.max_y:
             self.end = new_end
@@ -237,6 +278,20 @@ class App:
         else:
             self.start = self.min_y
             self.start = self.min_y
+
+        return True
+
+    def scale_move(self, orientation):
+        delta = abs(self.start - self.end) / 2
+
+        if orientation == 'up':
+            if self.start - delta < self.min_y:
+                delta = abs(self.min_y - self.start)
+            return self.set_new_border(self.start - delta, self.end - delta)
+        else:
+            if self.end + delta > self.max_y:
+                delta = abs(self.max_y - self.end)
+            return self.set_new_border(self.start + delta, self.end + delta)
 
     def add_pad(self):
         pad = Pad(self.root)
@@ -284,15 +339,14 @@ class App:
         return n + 2
 
 
-class Window():
-    plt_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-                  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-                  '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-                  '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
-                  ]
+class Window:
+    plt_colors = ['#ffbb78', '#ff9896', '#ff7f0e', '#f7b6d2', '#e377c2', '#dbdb8d', '#d62728', '#c7c7c7', '#c5b0d5',
+                  '#c49c94', '#bcbd22', '#aec7e8', '#9edae5', '#98df8a', '#9467bd', '#8c564b', '#7f7f7f', '#2ca02c',
+                  '#1f77b4', '#17becf']
 
     def __init__(self, root_widget):
         self.i = 0
+        self.time_event_mouse_scroll = 0
         self.root = root_widget
         self.root = root_widget
         self.head_frame = Frame(self.root)
@@ -314,27 +368,7 @@ class Window():
         self.progress_bar_start()
         filename = 'C:/Users/kosac/PycharmProjects/petro_chart/main/test_template.json'
 
-        with open(filename) as f:
-            template = json.load(f)
-            for file in template['files']:
-                self.app.add_curves_from_file(file)
-
-            for pad in template['pads']:
-                new_pad = self.app.add_pad()
-                new_pad.log.set(pad['log'])
-                new_pad.type.set(pad['type'])
-                new_pad.line_quantity.set(pad['line_quantity'])
-                for chart in pad['charts']:
-                    new_chart = Chart(self.app.curves[chart['name']].get('dots'),
-                                      name=chart['name'],
-                                      color=chart['color'],
-                                      type=chart['type'],
-                                      borders=chart['borders'],
-                                      borders_color=chart['borders_color'],
-                                      fill_side=chart['fill_side'],
-                                      unit=self.app.curves.get(chart['name']).get('unit'))
-
-                    new_pad.add_chart(new_chart)
+        self.load_template(filename)
 
         self.progress_bar_stop()
 
@@ -353,11 +387,19 @@ class Window():
 
         self.progress_bar_stop()
 
-    def load_template(self):
+    def get_template_file(self):
         self.progress_bar_start()
         filename = filedialog.askopenfilename(title='Открыть файл', initialdir=os.getcwd(),
                                               filetypes=[('JSON files', '.json')])
 
+        self.load_template(filename)
+
+        self.progress_bar_stop()
+
+        self.draw_pad_choose_menu()
+        self.draw_pads()
+
+    def load_template(self, filename):
         with open(filename) as f:
             template = json.load(f)
             for file in template['files']:
@@ -368,25 +410,23 @@ class Window():
                 new_pad.log.set(pad['log'])
                 new_pad.type.set(pad['type'])
                 new_pad.line_quantity.set(pad['line_quantity'])
+                new_pad.width.set(pad['width'])
                 for chart in pad['charts']:
                     new_chart = Chart(self.app.curves[chart['name']].get('dots'),
-                                      name=chart['name'],
-                                      color=chart['color'],
-                                      type=chart['type'],
-                                      borders=chart['borders'],
-                                      borders_color=chart['borders_color'],
-                                      fill_side=chart['fill_side'],
-                                      unit=self.app.curves.get(chart['name']).get('unit'))
+                                      name=chart.get('name'),
+                                      color=chart.get('color'),
+                                      type=chart.get('type'),
+                                      min_border=chart.get('min_border'),
+                                      max_border=chart.get('max_border'),
+                                      borders=set(chart.get('borders')),
+                                      borders_color=chart.get('borders_color'),
+                                      fill_side=chart.get('fill_side'),
+                                      unit=self.app.curves.get(chart.get('name')).get('unit'))
 
                     new_pad.add_chart(new_chart)
 
-        self.progress_bar_stop()
-
-        self.draw_pad_choose_menu()
-        self.draw_pads()
-
     def save_template(self):
-        filename = filedialog.asksaveasfilename(initialdir='os.getcwd()', title='Select file',
+        filename = filedialog.asksaveasfilename(defaultextension='.json', initialdir='os.getcwd()', title='Select file',
                                                 filetypes=(('json files', '*.json'), ("All files", "*.")))
         if filename is None or filename == '':  # asksaveasfile return `None` if dialog closed with 'cancel'.
             return
@@ -395,15 +435,18 @@ class Window():
 
         for pad in self.app.pads:
             pad_info = {'log': pad.log.get(), 'type': pad.type.get(),
-                        'line_quantity': pad.line_quantity.get(), 'charts': []}
+                        'line_quantity': pad.line_quantity.get(), 'charts': [], 'width': pad.width.get()}
 
             for chart in pad.charts:
-                parametrs = {'name': chart.parametrs.get('name'), 'color': chart.parametrs.get('color'),
-                             'type': chart.get_type_line(), 'borders': chart.parametrs.get('borders'),
-                             'borders_color': chart.parametrs.get('borders_color'),
-                             'fill_side': chart.fill_side()}
+                parameters = {'name': chart.parameters.get('name'), 'color': chart.parameters.get('color'),
+                              'type': chart.get_type_line(), 'borders': list(chart.parameters.get('borders')),
+                              'min_border': chart.get_min_border(),
+                              'max_border': chart.get_max_border(),
+                              'borders_color': chart.parameters.get('borders_color'),
+                              'fill_side': chart.get_fill_side()}
+                print(parameters)
 
-                pad_info['charts'].append(parametrs)
+                pad_info['charts'].append(parameters)
 
             main_json['pads'].append(pad_info)
 
@@ -433,14 +476,14 @@ class Window():
         move_frame = Frame(self.head_frame)
         move_frame.pack(padx=10, side=LEFT)
         Button(move_frame, text='Сохранить шаблон', command=self.save_template).pack(side=RIGHT)
-        Button(move_frame, text='Загрузить шаблон', command=self.load_template).pack(side=RIGHT)
+        Button(move_frame, text='Загрузить шаблон', command=self.get_template_file).pack(side=RIGHT)
         Button(move_frame, text='Добавить las файл', command=self.add_las_file).pack(side=RIGHT)
 
         if self.app.curves != {}:
             move_frame = Frame(self.head_frame)
             move_frame.pack(padx=10, side=RIGHT)
-            Button(move_frame, text='->', command=self.pads_move_right).pack(side=RIGHT)
-            Button(move_frame, text='<-', command=self.pads_move_left).pack(side=RIGHT)
+            Button(move_frame, text='->', command=self.pads_scroll_right).pack(side=RIGHT)
+            Button(move_frame, text='<-', command=self.pads_scroll_left).pack(side=RIGHT)
 
             add_pad_frame = Frame(self.head_frame)
             add_pad_frame.pack(padx=10, side=RIGHT)
@@ -448,12 +491,26 @@ class Window():
             OptionMenu(add_pad_frame, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT)
             Button(add_pad_frame, text='+', command=self.add_pad).pack(side=LEFT)
 
-    def pads_move_right(self):
+    def pads_scroll_right(self):
         self.app.set_first_show_pad(self.app.first_show_pad + 1)
         self.draw_pads()
 
-    def pads_move_left(self):
+    def pads_scroll_left(self):
         self.app.set_first_show_pad(self.app.first_show_pad - 1)
+        self.draw_pads()
+
+    def pad_move_left(self, pad_number):
+        if pad_number not in range(1, len(self.app.pads)):
+            return
+        self.app.pads[pad_number - 1], self.app.pads[pad_number] = self.app.pads[pad_number], self.app.pads[
+            pad_number - 1]
+        self.draw_pads()
+
+    def pad_move_right(self, pad_number):
+        if pad_number not in range(0, len(self.app.pads) - 1):
+            return
+        self.app.pads[pad_number + 1], self.app.pads[pad_number] = self.app.pads[pad_number], self.app.pads[
+            pad_number + 1]
         self.draw_pads()
 
     def draw_scale_pad(self):
@@ -474,15 +531,23 @@ class Window():
 
         self.canvas_scale = FigureCanvasTkAgg(scale_fig, self.main_scale_frame)
         self.canvas_scale.callbacks.connect('button_press_event', self.change_scale)
+        self.canvas_scale.callbacks.connect('scroll_event', self.move_scale)
 
         self.canvas_scale.get_tk_widget().pack(side=BOTTOM)
         self.canvas_scale.draw()
+
+    def move_scale(self, event):
+        if abs(self.time_event_mouse_scroll - time.time()) > 1:
+            self.time_event_mouse_scroll = time.time()
+            if self.app.scale_move(event.button):
+                self.draw_pads()
 
     def change_scale_pad(self):
         for child in self.scale_cell_frame.winfo_children():
             child.destroy()
 
-        for i in range(self.app.max_pads_cells()):
+        Cell(self.scale_cell_frame, False, 'MD', 'black', '', 'meters', '')
+        for i in range(self.app.max_pads_cells() - 1):
             Cell(self.scale_cell_frame, False, '', 'grey', '', '', '')
 
         self.canvas_scale.get_tk_widget().pack_forget()
@@ -538,16 +603,26 @@ class Window():
         if self.app.pads[pad_number].log.get():
             pad_frame.chart.set_xscale('log')
 
-        main_min = math.inf
-        main_max = -math.inf
+        main_min = 10**10
+        main_max = -(10**10)
 
         for chart in self.app.pads[pad_number].charts:
-            x, y = self.app.dots_range(chart.dots)
-            main_min = min(np.nanmin(x), main_min)
-            main_max = max(np.nanmax(x), main_max)
-            X_Lim = [np.nanmin(x), np.nanmax(x)]
+            x, y = self.app.dots_range(chart.get_dots_with_border())
 
-            chart_line = pad_frame.chart.plot(x, y)
+            main_min = np.nanmin(x + [main_min])
+            main_max = np.nanmax(x + [main_max])
+
+            chart_line = pad_frame.chart.plot(x, y, color=chart.parameters['color'])
+
+            new_x = np.ma.masked_where(x > main_min, x)
+            pad_frame.chart.plot(new_x, y, linestyle=':',
+                                 linewidth=2,
+                                 color='white', clip_on=True)
+
+            new_x = np.ma.masked_where(x < main_max, x)
+            pad_frame.chart.plot(new_x, y, linestyle=':',
+                                 linewidth=2,
+                                 color='white', clip_on=True)
 
             if chart.get_type_line() == 'fill':
                 xx, yy = self.split_mass_nan(x, y)
@@ -559,30 +634,34 @@ class Window():
                     pad_frame.chart.fill_between(xx[i], yy[i], y2=min(yy[i]), color=chart_line[0].get_color(),
                                                  alpha=0.5)
 
-            medium = abs(X_Lim[0] - X_Lim[1])
+            medium = abs(main_min - main_max)
             n_round = self.app.n_round(medium)
 
             new_cell_frame = Cell(pad_frame.cell_frame, False,
-                                  chart.parametrs.get('name'),
+                                  chart.parameters.get('name'),
                                   chart_line[0].get_color(),
-                                  str(round(X_Lim[0], n_round)),
-                                  chart.parametrs.get('unit'),
-                                  str(round(X_Lim[1], n_round)))
+                                  str(round(main_min, n_round)),
+                                  chart.parameters.get('unit'),
+                                  str(round(main_max, n_round)))
 
-            chart.parametrs['color'] = chart_line[0].get_color()
+            chart.parameters['color'] = chart_line[0].get_color()
 
             pad_frame.cell.append(new_cell_frame)
-            pad_frame.pad_frame.pack(side=LEFT)
 
-        pad_frame.chart.set_ylim(self.app.end, self.app.start)
+            pad_frame.chart.set_ylim(self.app.end, self.app.start)
 
-        pad_frame.chart.set_xlim(main_min * 1.01, main_max * 1.01)
+            chart_border = abs(main_min - main_max) * 0.02
+
+            pad_frame.chart.set_xlim(main_min - chart_border, main_max + chart_border)
+
+        pad_frame.add_empty_cell(self.app.max_pads_cells() - len(self.app.pads[pad_number].charts))
+        pad_frame.pad_frame.pack(side=LEFT)
 
         line_quantity = int(self.app.pads[pad_number].line_quantity.get())
         medium = abs(pad_frame.chart.get_xlim()[0] - pad_frame.chart.get_xlim()[1])
         step = medium / (line_quantity + 1)
 
-        for x in range(line_quantity + 1):
+        for x in range(1, line_quantity + 1):
             x1 = pad_frame.chart.get_xlim()[0] + step * x
             pad_frame.chart.plot(
                 [x1, x1],
@@ -590,42 +669,47 @@ class Window():
                 color='black',
                 linewidth=0.5)
 
-        pad_frame.add_empty_cell(self.app.max_pads_cells() - len(self.app.pads[pad_number].charts))
-
     def draw_row_in_pad(self, pad_number, pad_frame):
         if len(self.app.pads[pad_number].charts) == 0:
             return
 
         chart = self.app.pads[pad_number].charts[0]
-        x, y = self.app.dots_range(chart.dots)
+        x, y = self.app.dots_range(chart.get_dots_with_border())
+        main_min, main_max = np.nanmin(x + [10**10]), np.nanmax(x + [-(10**10)])
 
-        fig_color, ax_color = plt.subplots()
-        if len(chart.parametrs['borders_color']) + 1 < len(chart.parametrs['borders']):
+        new_x = np.ma.masked_where(x == np.nan, x)
+
+
+        for i in range(len(new_x)):
+            print(i, new_x[i])
+
+        borders = chart.parameters['borders'].copy()
+        if len(chart.parameters['borders_color']) + 1 < len(borders):
             borders_color = []
-            for i in chart.parametrs['borders']:
-                chart_line = ax_color.plot(1, 1)
-                borders_color.append(chart_line[0].get_color())
-            chart.parametrs['borders_color'] = borders_color
+            for i in borders:
+                borders_color.append(self.plt_colors[random.randrange(len(self.plt_colors))])
+            chart.parameters['borders_color'] = borders_color
 
         fig = pad_frame.fig
         ax = pad_frame.chart
 
-        a = StolbGraph(2, x, y, chart.parametrs['borders_color'],
-                       chart.parametrs['borders'], fig=fig, ax=ax)
+        a = StolbGraph(2, x, y, chart.parameters['borders_color'],
+                       borders, fig=fig, ax=ax)
         a.draw()
 
-        X_Lim = [np.nanmin(x), np.nanmax(x)]
+        #np.
 
-        medium = abs(X_Lim[0] - X_Lim[1])
+
+        medium = abs(main_min - main_max)
         n_round = self.app.n_round(medium)
         new_cell_frame = Cell(pad_frame.cell_frame, False,
-                              chart.parametrs.get('name'),
+                              chart.parameters.get('name'),
                               'blue',
-                              str(round(X_Lim[0], n_round)),
-                              chart.parametrs.get('unit'),
-                              str(round(X_Lim[1], n_round)))
+                              str(round(main_min, n_round)),
+                              chart.parameters.get('unit'),
+                              str(round(main_max, n_round)))
 
-        chart.parametrs['color'] = 'blue'
+        chart.parameters['color'] = 'blue'
         pad_frame.cell.append(new_cell_frame)
         pad_frame.pad_frame.pack(side=LEFT)
 
@@ -636,13 +720,18 @@ class Window():
         pad_frame.add_empty_cell(self.app.max_pads_cells() - 1)
 
     def create_pad_menu(self, frame, pad_number):
-        pad_edit_button = Button(frame, text='Изменить',
-                                 command=lambda j=pad_number: self.show_pad_edit_window(j))
-        pad_edit_button.pack(side=LEFT)
+        frame.grid_columnconfigure(1, weight=3)
 
-        button_delete_pad = Button(frame, text='X',
-                                   command=lambda j=pad_number: self.delete_pad(j))
-        button_delete_pad.pack(side=RIGHT)
+        btn1 = Button(frame, text='Изменить!', command=lambda pn=pad_number: self.show_pad_edit_window(pn))
+        btn2 = Button(frame, text='X', command=lambda pn=pad_number: self.delete_pad(pn))
+
+        nav_frame = Frame(frame)
+        Button(nav_frame, text='◀', command=lambda pn=pad_number: self.pad_move_left(pn)).pack(side=LEFT)
+        Button(nav_frame, text='▶', command=lambda pn=pad_number: self.pad_move_right(pn)).pack(side=LEFT)
+
+        btn1.grid(row=0, column=0)
+        nav_frame.grid(row=0, column=1)
+        btn2.grid(row=0, column=2)
 
     def delete_pad(self, pad_number):
         self.app.delete_pad(pad_number)
@@ -661,7 +750,7 @@ class Window():
         self.update_pad_edit_window(pad_number)
 
     def pop_border_from_pad(self, pad_number, value):
-        self.app.pads[pad_number].charts[0].parametrs['borders'].remove(value)
+        self.app.pads[pad_number].charts[0].parameters['borders'].remove(value)
         self.update_pad_edit_window(pad_number)
 
     def add_pad_border(self, pad_number, value):
@@ -675,10 +764,12 @@ class Window():
             self.app.open_error_window('Не указана линия!')
             return
 
-        self.app.pads[pad_number].charts[0].parametrs['borders'].append(border_value)
-        self.app.pads[pad_number].charts[0].parametrs['borders'] = \
-            sorted(self.app.pads[pad_number].charts[0].parametrs['borders'])
+        print(758, type(self.app.pads[pad_number].charts[0].parameters['borders']))
+        self.app.pads[pad_number].charts[0].parameters['borders'].add(border_value)
+        self.app.pads[pad_number].charts[0].parameters['borders'] = \
+            set(sorted(self.app.pads[pad_number].charts[0].parameters['borders']))
 
+        self.show_pad_settings_window(pad_number)
         self.update_pad_edit_window(pad_number)
 
     def show_pad_edit_window(self, pad_number):
@@ -688,7 +779,7 @@ class Window():
         self.pad_edit_window = Toplevel(self.root)
         self.pad_edit_window.title('Настройки планшета: ' + str(pad_number + 1))
         # self.pad_edit_window.wm_geometry('400x400')
-        self.pad_edit_window.protocol('WM_DELETE_WINDOW', lambda j=self.pad_edit_window: self.pre_destroy(j))
+        self.pad_edit_window.protocol('WM_DELETE_WINDOW', lambda pew=self.pad_edit_window: self.pre_destroy(pew))
 
         self.update_pad_edit_window(pad_number)
 
@@ -698,13 +789,14 @@ class Window():
 
         self.choose_color_window = Toplevel(self.root)
         self.choose_color_window.title('Выбор Цвета')
-        for i in self.plt_colors:
-            Button(self.choose_color_window, bg=i,
-                   command=lambda j=i: self.set_new_color_chart(j, chart, pad_number)).pack(side=LEFT)
-        self.choose_color_window.protocol('WM_DELETE_WINDOW', lambda j=self.choose_color_window: self.pre_destroy(j))
+        for color in self.plt_colors:
+            Button(self.choose_color_window, bg=color,
+                   command=lambda с=color, ch=chart, pn=pad_number: self.set_new_color_chart(с, ch, pn)).pack(side=LEFT)
+        self.choose_color_window.protocol('WM_DELETE_WINDOW',
+                                          lambda ccw=self.choose_color_window: self.pre_destroy(ccw))
 
     def set_new_color_chart(self, color, chart, pad_number):
-        chart.parametrs['color'] = color
+        chart.parameters['color'] = color
         self.update_pad_edit_window(pad_number)
 
     def update_pad_edit_window(self, pad_number):
@@ -718,93 +810,36 @@ class Window():
         chart_add.pack(side=TOP, fill='both')
 
         OptionMenu(chart_add, self.pad_choose, *list(self.app.curves.keys())).pack(side=LEFT, padx=1)
-        Button(chart_add, text='+', command=lambda j=pad_number: self.add_chart_to_pad(j)).pack(side=LEFT)
-        Button(chart_add, text='⚙', command=lambda j=pad_number: self.show_pad_settings_window(j)).pack(side=RIGHT)
-
+        Button(chart_add, text='+', command=lambda pn=pad_number: self.add_chart_to_pad(pn)).pack(side=LEFT)
+        Button(chart_add, text='⚙', command=lambda pn=pad_number: self.show_pad_settings_window(pn)).pack(side=RIGHT)
 
         for chart in self.app.pads[pad_number].charts:
             chart_delete = Frame(chart_edit)
             chart_delete.pack(side=TOP, fill='both')
 
-            Button(chart_delete, bg=chart.parametrs.get('color'),
-                   command=lambda j=chart: self.show_choose_color_window(j, pad_number)).pack(side=LEFT, padx=3)
+            Button(chart_delete, bg=chart.parameters.get('color'),
+                   command=lambda ch=chart, pn=pad_number: self.show_choose_color_window(ch, pn)).pack(side=LEFT,
+                                                                                                       padx=3)
             Button(chart_delete, text='⚙',
-                   command=lambda j=chart: self.show_edit_chart_window(pad_number, j)).pack(side=LEFT)
-            Label(chart_delete, text=chart.parametrs.get('name')).pack(side=LEFT)
+                   command=lambda pn=pad_number, ch=chart: self.show_edit_chart_window(pn, ch)).pack(side=LEFT)
+            Label(chart_delete, text=chart.parameters.get('name')).pack(side=LEFT)
 
-            Button(chart_delete, text='X', command=lambda j=chart: self.pop_chart_from_pad(pad_number, j)).pack(
-                side=RIGHT)
+            Button(chart_delete, text='X', command=lambda pn=pad_number, ch=chart: self.pop_chart_from_pad(pn, ch)) \
+                .pack(side=RIGHT)
 
-            #if chart.type_line is None:
-            #    chart.type_line = StringVar(self.root)
-            #    chart.type_line.set(chart.parametrs.get('type'))
-            #    chart.fill_side = StringVar(self.root)
-            #    chart.fill_side.set(chart.parametrs.get('fill_side'))
-            #OptionMenu(chart_delete, chart.fill_side, *list(['left', 'right'])).pack(side=RIGHT)
-            #OptionMenu(chart_delete, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
-
-      #chart_styles = Frame(self.pad_edit_window)
-      #chart_styles.pack(side=TOP)
-
-      #pad_log = Frame(chart_styles)
-      #pad_log.pack(side=TOP)
-
-      #Label(pad_log, text='Логарифмическая шкала').pack(side=LEFT)
-      #Checkbutton(pad_log, variable=self.app.pads[pad_number].log).pack(side=LEFT)
-
-      #pad_grid = Frame(chart_styles)
-      #pad_grid.pack(side=TOP)
-
-      #Label(pad_grid, text='Количество линий').pack(side=LEFT)
-      #OptionMenu(pad_grid, self.app.pads[pad_number].line_quantity, *list(range(11))).pack(side=LEFT)
-
-      #pad_type = Frame(chart_styles)
-      #pad_type.pack(side=TOP)
-
-      #if self.app.pads[pad_number].type._tclCommands is None:
-      #    self.app.pads[pad_number].type.trace('w', lambda *args: self.edit_window_on_change(pad_number, *args))
-
-      #Label(pad_type, text='Тип кривой').pack(side=LEFT)
-      #OptionMenu(pad_type, self.app.pads[pad_number].type, *list(['line', 'row'])).pack(side=LEFT)
-
-      #if len(self.app.pads[pad_number].charts) == 0:
-      #    return
-
-      #if self.app.pads[pad_number].type.get() == 'row':
-      #    pad_border = LabelFrame(chart_styles, text='Добавление границ')
-      #    pad_border.pack(side=TOP)
-      #    border_value = StringVar(value=0)
-
-      #    add_pad_border = Frame(pad_border)
-      #    add_pad_border.pack(side=TOP)
-
-      #    Entry(add_pad_border, textvariable=border_value).pack(side=LEFT)
-      #    Button(add_pad_border, text='+', command=lambda j=border_value: self.add_pad_border(pad_number, j)).pack(
-      #        side=RIGHT)
-
-      #    for border in self.app.pads[pad_number].charts[0].parametrs['borders']:
-      #        pad_border_delete = Frame(pad_border)
-      #        pad_border_delete.pack(side=BOTTOM, fill='both')
-
-      #        Label(pad_border_delete, text=border).pack(side=LEFT)
-      #        Button(pad_border_delete, text='X',
-      #               command=lambda j=border: self.pop_border_from_pad(pad_number, j)).pack(side=RIGHT)
-      #        # Frame(pad_border_delete, width=30, height=2, bg=chart.parametrs.get('color')).pack(side=RIGHT)
+        Button(chart_edit, text='Применить', command=self.draw_pads).pack(side=BOTTOM)
 
     def show_edit_chart_window(self, pad_number, chart):
         if hasattr(self, 'edit_chart_window'):
             self.edit_chart_window.destroy()
 
         self.edit_chart_window = Toplevel(self.root)
-        self.edit_chart_window.title('Настройки кривой планшета: ' + str(pad_number + 1))
-        self.edit_chart_window.wm_geometry('400x400')
-        self.edit_chart_window.protocol('WM_DELETE_WINDOW', lambda j=self.edit_chart_window: self.pre_destroy(j))
+        self.edit_chart_window.title('Настройки кривой планшета: ' + str(int(pad_number + 1)))
+        self.edit_chart_window.wm_geometry('400x400+100+100')
+        self.edit_chart_window.protocol('WM_DELETE_WINDOW', lambda ecw=self.edit_chart_window: self.pre_destroy(ecw))
 
         frame_1 = Frame(self.edit_chart_window)
         frame_1.pack(fill='both')
-
-        chart.type_line = StringVar(self.root)
-        chart.type_line.set(chart.parametrs.get('type'))
 
         Label(frame_1, text='Тип линии:').pack(side=LEFT)
         OptionMenu(frame_1, chart.type_line, *list(['line', 'fill'])).pack(side=RIGHT)
@@ -812,21 +847,35 @@ class Window():
         frame_2 = Frame(self.edit_chart_window)
         frame_2.pack(fill='both')
 
-        chart.fill_side = StringVar(self.root)
-        chart.fill_side.set(chart.parametrs.get('fill_side'))
-
         Label(frame_2, text='Сторона заливки:').pack(side=LEFT)
         OptionMenu(frame_2, chart.fill_side, *list(['left', 'right'])).pack(side=RIGHT)
 
+        frame_3 = Frame(self.edit_chart_window)
+        frame_3.pack(fill='both')
+
+        Label(frame_3, text='Нижняя граница').pack(side=LEFT)
+        Entry(frame_3, textvariable=chart.min_border).pack(side=RIGHT)
+
+        frame_4 = Frame(self.edit_chart_window)
+        frame_4.pack(fill='both')
+
+        Label(frame_4, text='Верхняя граница').pack(side=LEFT)
+        Entry(frame_4, textvariable=chart.max_border).pack(side=RIGHT)
+
+        Button(self.edit_chart_window, text='Готово',
+               command=lambda ecw=self.edit_chart_window: self.pre_destroy(ecw)).pack(side=BOTTOM)
+
         self.update_pad_edit_window(pad_number)
 
-    def show_pad_settings_window(self, pad_number):
+    def show_pad_settings_window(self,  pad_number: int):
         if hasattr(self, 'pad_settings_window'):
             self.pad_settings_window.destroy()
 
         self.pad_settings_window = Toplevel(self.root)
-        self.pad_settings_window.title('Настройки кривой планшета: ' + str(pad_number + 1))
-        self.pad_settings_window.protocol('WM_DELETE_WINDOW', lambda j=self.pad_settings_window: self.pre_destroy(j))
+        self.pad_settings_window.title('Настройки отрисовки планшета:{current_pad_number}'.format(current_pad_number=int(pad_number) + 1))
+        self.pad_settings_window.wm_geometry('400x400+100+100')
+        self.pad_settings_window.protocol('WM_DELETE_WINDOW',
+                                          lambda psw=self.pad_settings_window: self.pre_destroy(psw))
 
         chart_styles = Frame(self.pad_settings_window)
         chart_styles.pack(side=TOP)
@@ -843,11 +892,17 @@ class Window():
         Label(pad_grid, text='Количество линий').pack(side=LEFT)
         OptionMenu(pad_grid, self.app.pads[pad_number].line_quantity, *list(range(11))).pack(side=LEFT)
 
+        pad_width = Frame(chart_styles)
+        pad_width.pack(side=TOP)
+
+        Label(pad_width, text='Ширина планшета').pack(side=LEFT)
+        OptionMenu(pad_width, self.app.pad_frames[pad_number].width, *list(range(1, 20))).pack(side=LEFT)
+
         pad_type = Frame(chart_styles)
         pad_type.pack(side=TOP)
 
         if self.app.pads[pad_number].type._tclCommands is None:
-            self.app.pads[pad_number].type.trace('w', lambda *args: self.show_pad_settings_window(pad_number))
+            self.app.pads[pad_number].type.trace('w', lambda *args, pn=pad_number: self.edit_window_on_change(pn, args))
 
         Label(pad_type, text='Тип кривой').pack(side=LEFT)
         OptionMenu(pad_type, self.app.pads[pad_number].type, *list(['line', 'row'])).pack(side=LEFT)
@@ -864,20 +919,25 @@ class Window():
             add_pad_border.pack(side=TOP)
 
             Entry(add_pad_border, textvariable=border_value).pack(side=LEFT)
-            Button(add_pad_border, text='+', command=lambda j=border_value: self.add_pad_border(pad_number, j)).pack(
-                side=RIGHT)
+            Button(add_pad_border, text='+', command=lambda pn=pad_number, bv=border_value: self.add_pad_border(pn, bv))\
+                .pack(side=RIGHT)
 
-            for border in self.app.pads[pad_number].charts[0].parametrs['borders']:
+            print(self.app.pads[pad_number].charts[0].parameters['borders'])
+
+            borders = set(self.app.pads[pad_number].charts[0].parameters['borders'].copy())
+            borders.discard(-math.inf)
+            borders.discard(math.inf)
+            for border in borders:
                 pad_border_delete = Frame(pad_border)
                 pad_border_delete.pack(side=BOTTOM, fill='both')
 
                 Label(pad_border_delete, text=border).pack(side=LEFT)
                 Button(pad_border_delete, text='X',
-                       command=lambda j=border: self.pop_border_from_pad(pad_number, j)).pack(side=RIGHT)
+                       command=lambda pn=pad_number, b=border: self.pop_border_from_pad(pn, b)).pack(side=RIGHT)
         self.update_pad_edit_window(pad_number)
 
     def edit_window_on_change(self, p_n, *args):
-        self.i += 1
+        self.show_pad_settings_window(p_n)
         self.update_pad_edit_window(p_n)
 
     def split_mass_nan(self, x, y):
@@ -901,6 +961,7 @@ class Window():
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry('1920x900+-10+0')
+    root.geometry('960x950+1920+0')
+    # root.geometry('1920x900+-10+0')
     window = Window(root)
     window.root.mainloop()
