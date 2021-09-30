@@ -366,7 +366,7 @@ class Window:
 
     def debug(self):
         self.progress_bar_start()
-        filename = 'C:/Users/kosac/PycharmProjects/petro_chart/main/test_template.json'
+        filename = '/Files/test_template.json'
 
         self.load_template(filename)
 
@@ -444,7 +444,6 @@ class Window:
                               'max_border': chart.get_max_border(),
                               'borders_color': chart.parameters.get('borders_color'),
                               'fill_side': chart.get_fill_side()}
-                print(parameters)
 
                 pad_info['charts'].append(parameters)
 
@@ -961,7 +960,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry('960x950+1920+0')
-    # root.geometry('1920x900+-10+0')
+    # root.geometry('960x950+1920+0')
+    root.geometry('1920x900+-10+0')
     window = Window(root)
     window.root.mainloop()
