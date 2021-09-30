@@ -7,11 +7,10 @@ from tkinter import *
 from tkinter import filedialog, ttk
 
 import lasio
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
-from StolbGraph import StolbGraph
+import graph_modules
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -143,11 +142,11 @@ class PadFrame:
         self.cell_frame = Frame(self.pad_frame)  # , text='cell_frame')
         self.cell_frame.pack(side=TOP, fill='both')
 
-        self.canvas_frame = Frame(self.pad_frame)
-        self.canvas_frame.pack(side=TOP)
-
         self.pad_menu_frame = Frame(self.pad_frame)  # , text='pad_menu_frame')
         self.pad_menu_frame.pack(side=BOTTOM, fill='both')
+
+        self.canvas_frame = Frame(self.pad_frame)
+        self.canvas_frame.pack(side=TOP, fill='both')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
         self.canvas_get_tk_widget = self.canvas.get_tk_widget()
@@ -366,7 +365,7 @@ class Window:
 
     def debug(self):
         self.progress_bar_start()
-        filename = '/Files/test_template.json'
+        filename = 'Files/test_template.json'
 
         self.load_template(filename)
 
@@ -692,8 +691,8 @@ class Window:
         fig = pad_frame.fig
         ax = pad_frame.chart
 
-        a = StolbGraph(2, x, y, chart.parameters['borders_color'],
-                       borders, fig=fig, ax=ax)
+        a = graph_modules.StolbGraph(2, x, y, chart.parameters['borders_color'],
+                                     borders, fig=fig, ax=ax)
         a.draw()
 
         #np.
@@ -719,7 +718,7 @@ class Window:
         pad_frame.add_empty_cell(self.app.max_pads_cells() - 1)
 
     def create_pad_menu(self, frame, pad_number):
-        frame.grid_columnconfigure(1, weight=3)
+        # frame.grid_columnconfigure(1, weight=3)
 
         btn1 = Button(frame, text='Изменить!', command=lambda pn=pad_number: self.show_pad_edit_window(pn))
         btn2 = Button(frame, text='X', command=lambda pn=pad_number: self.delete_pad(pn))
@@ -961,6 +960,6 @@ class Window:
 if __name__ == '__main__':
     root = Tk()
     # root.geometry('960x950+1920+0')
-    root.geometry('1920x900+-10+0')
+    root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()
