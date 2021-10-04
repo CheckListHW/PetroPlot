@@ -1,3 +1,4 @@
+import re
 import json
 import math
 import os
@@ -361,11 +362,11 @@ class Window:
         self.draw_pad_choose_menu()
         self.draw_scale_pad()
         self.draw_pads()
-        # self.debug()
+        self.debug()
 
     def debug(self):
         self.progress_bar_start()
-        filename = 'Files/test_template.json'
+        filename = 'Files/lns.json'
 
         self.load_template(filename)
 
@@ -578,6 +579,7 @@ class Window:
         for frame in self.app.pad_frames:
             frame.pad_frame.pack_forget()
 
+
         for pad_number in range(self.app.first_show_pad, len(self.app.pads)):
             pad_frame = self.app.get_or_create_pad_frame(pad_number)
 
@@ -668,6 +670,9 @@ class Window:
                 linewidth=0.5)
 
     def draw_row_in_pad(self, pad_number, pad_frame):
+        run_time = time.time()
+        i = 0
+
         if len(self.app.pads[pad_number].charts) == 0:
             return
 
@@ -676,8 +681,6 @@ class Window:
         main_min, main_max = np.nanmin(x + [10**10]), np.nanmax(x + [-(10**10)])
 
         new_x = np.ma.masked_where(x == np.nan, x)
-
-
 
         borders = chart.parameters['borders'].copy()
         if len(chart.parameters['borders_color']) + 1 < len(borders):
@@ -691,10 +694,8 @@ class Window:
 
         a = graph_modules.StolbGraph(2, x, y, chart.parameters['borders_color'],
                                      borders, fig=fig, ax=ax)
+
         a.draw()
-
-        #np.
-
 
         medium = abs(main_min - main_max)
         n_round = self.app.n_round(medium)
@@ -704,7 +705,7 @@ class Window:
                               str(round(main_min, n_round)),
                               chart.parameters.get('unit'),
                               str(round(main_max, n_round)))
-
+        
         chart.parameters['color'] = 'blue'
         pad_frame.cell.append(new_cell_frame)
         pad_frame.pad_frame.pack(side=LEFT)
@@ -954,7 +955,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    # root.geometry('960x950+1920+0')
-    root.geometry('1920x800+-10+0')
+    root.geometry('1920x800+1920+0')
+    # root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()

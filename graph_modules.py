@@ -37,35 +37,46 @@ class StolbGraph:
         self.ax = ax
         self.y = []
         self.color = []
-        new_border = None
-        empty = False
 
-        self.y.append(y[0])
-        self.color.append(colorLine[0])
+        # self.y.append(y[0])
+        # self.color.append(colorLine[0])
 
+        step = 0
         borders = list(borders)
-        for step in range(len(x)):
-            for i in range(1, len(borders)):
-                if not -math.inf <= x[step] <= math.inf and empty is False:
-                    self.y.append(y[step])
-                    self.color.append('white')
-                    empty = True
-                if borders[i - 1] <= x[step] < borders[i]:
-                    if new_border != borders[i - 1]:
-                        empty = False
-                        next_color = i - 1
-                        new_border = borders[i - 1]
+        len_x = len(x)
+
+        while step < len_x:
+            if not -math.inf <= x[step] <= math.inf:
+                self.y.append(y[step])
+                self.color.append('white')
+                while not -math.inf <= x[step] <= math.inf:
+                    step += 1
+                    if step >= len_x:
+                        break
+
+            else:
+                for i in range(1, len(borders)):
+                    if borders[i-1] <= x[step] < borders[i]:
                         self.y.append(y[step])
-                        self.color.append(colorLine[next_color])
+                        self.color.append(colorLine[i-1])
+                        while borders[i-1] <= x[step] < borders[i]:
+                            step += 1
+                            if step >= len_x:
+                                break
+                        break
+
+        print(self.y)
 
         self.y.append(y[-1])
         self.x = np.linspace(0, maxX, maxX)
         self.w = w
         self.h = h
 
+
     def draw(self):
         if self.fig is None or self.ax is None:
             self.fig, self.ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 8))
+
 
         for i in range(0, len(self.y) - 1):
             self.ax.fill_between(self.x, self.y[i], self.y[i + 1], color=self.color[i])
@@ -74,7 +85,6 @@ class StolbGraph:
             self.fig.set_figwidth(self.w)
             self.fig.set_figheight(self.h)
 
-        #plt.show()
 
 
 class FillGraph:
