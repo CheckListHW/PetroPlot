@@ -361,7 +361,7 @@ class Window:
         self.draw_pad_choose_menu()
         self.draw_scale_pad()
         self.draw_pads()
-        self.debug()
+        # self.debug()
 
     def debug(self):
         self.progress_bar_start()
@@ -678,8 +678,6 @@ class Window:
         new_x = np.ma.masked_where(x == np.nan, x)
 
 
-        for i in range(len(new_x)):
-            print(i, new_x[i])
 
         borders = chart.parameters['borders'].copy()
         if len(chart.parameters['borders_color']) + 1 < len(borders):
@@ -762,7 +760,6 @@ class Window:
             self.app.open_error_window('Не указана линия!')
             return
 
-        print(758, type(self.app.pads[pad_number].charts[0].parameters['borders']))
         self.app.pads[pad_number].charts[0].parameters['borders'].add(border_value)
         self.app.pads[pad_number].charts[0].parameters['borders'] = \
             set(sorted(self.app.pads[pad_number].charts[0].parameters['borders']))
@@ -919,8 +916,6 @@ class Window:
             Entry(add_pad_border, textvariable=border_value).pack(side=LEFT)
             Button(add_pad_border, text='+', command=lambda pn=pad_number, bv=border_value: self.add_pad_border(pn, bv))\
                 .pack(side=RIGHT)
-
-            print(self.app.pads[pad_number].charts[0].parameters['borders'])
 
             borders = set(self.app.pads[pad_number].charts[0].parameters['borders'].copy())
             borders.discard(-math.inf)
