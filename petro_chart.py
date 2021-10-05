@@ -34,7 +34,6 @@ class Chart:
         self.max_border = StringVar(value=self.parameters.get('max_border'))
         self.parameters['borders'] = {-math.inf, math.inf}.union(self.parameters.get('borders'))
 
-
     def get_dots_with_border(self):
         border_dots = self.dots.copy()
         min_border = float(self.get_min_border())
@@ -79,8 +78,6 @@ class Chart:
 
 
 class Cell:
-    cell_frame = None
-
     def __init__(self, window, null, name, lineColor, leftValue, measure, rightValue):
         self.cell_frame = Frame(window, background='gray', highlightbackground='black', highlightthickness=1)
         self.cell_frame.pack(side=TOP, fill='both')
@@ -129,8 +126,6 @@ class Pad:
 
 
 class PadFrame:
-    i = 1
-
     def __init__(self, pads_frame, width=None):
         self.cell = []
         self.width = IntVar(value=3) if width is None else width
@@ -154,7 +149,6 @@ class PadFrame:
         self.canvas_get_tk_widget.pack(side=BOTTOM)
 
     def update_chart(self):
-        self.i += 1
         if self.width != self.fig.get_figwidth():
             self.canvas_get_tk_widget.destroy()
             plt.close(self.canvas.figure)
@@ -176,20 +170,16 @@ class PadFrame:
 
 
 class App:
-    pad_frames = []
-
-    min_y = None
-    max_y = None
-
-    start = None
-    end = None
-
-    pads = []
-    max_pad = 5
-
-    first_show_pad = 0
-
     def __init__(self, root):
+        self.pad_frames = []
+        self.min_y = None
+        self.max_y = None
+        self.start = None
+        self.end = None
+        self.pads = []
+        self.max_pad = 5
+
+        self.first_show_pad = 0
         self.filenames = []
         self.filenames_url = []
         self.curves = {}
@@ -344,10 +334,13 @@ class Window:
                   '#c49c94', '#bcbd22', '#aec7e8', '#9edae5', '#98df8a', '#9467bd', '#8c564b', '#7f7f7f', '#2ca02c',
                   '#1f77b4', '#17becf']
 
-    def __init__(self, root_widget):
+    def __init__(self, root_widget, template=''):
+        self.init_dir_and_file()
+
+        self.template = template if os.path.isfile(template) else None
+        self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
         self.i = 0
         self.time_event_mouse_scroll = 0
-        self.root = root_widget
         self.root = root_widget
         self.head_frame = Frame(self.root)
         self.head_frame.pack(side=BOTTOM)
@@ -356,7 +349,6 @@ class Window:
         self.main_scale_frame.pack(side=LEFT)
 
         self.app = App(self.root)
-
         self.pad_choose = StringVar(self.root)
 
         self.draw_pad_choose_menu()
@@ -364,11 +356,17 @@ class Window:
         self.draw_pads()
         self.debug()
 
+    def init_dir_and_file(self):
+        self.files_dir = os.getcwd() + '/Files'
+        if not os.path.isdir(self.files_dir):
+            os.mkdir(self.files_dir)
+
     def debug(self):
         self.progress_bar_start()
-        filename = 'Files/lns.json'
+        if self.template is not None:
+            filename = self.template
 
-        self.load_template(filename)
+            self.load_template(filename)
 
         self.progress_bar_stop()
 
@@ -378,7 +376,7 @@ class Window:
     def add_las_file(self):
         self.progress_bar_start()
 
-        filenames = filedialog.askopenfilename(title='Открыть файл', initialdir=os.getcwd(),
+        filenames = filedialog.askopenfilename(title='Открыть файл', initialdir=self.files_dir,
                                                filetypes=[('las files', '.las')], multiple=True)
 
         for filename in filenames:
@@ -389,7 +387,7 @@ class Window:
 
     def get_template_file(self):
         self.progress_bar_start()
-        filename = filedialog.askopenfilename(title='Открыть файл', initialdir=os.getcwd(),
+        filename = filedialog.askopenfilename(title='Открыть файл', initialdir=self.files_dir,
                                               filetypes=[('JSON files', '.json')])
 
         self.load_template(filename)
@@ -399,7 +397,21 @@ class Window:
         self.draw_pad_choose_menu()
         self.draw_pads()
 
+    @staticmethod
+    def is_file_json(filename):
+        print(filename)
+        try:
+            with open(filename) as f:
+                json_object = json.load(f)
+        except ValueError as e:
+            return False
+        except:
+            return False
+        return True
+
     def load_template(self, filename):
+        if not Window.is_file_json(filename):
+            return
         with open(filename) as f:
             template = json.load(f)
             for file in template['files']:
@@ -426,7 +438,14 @@ class Window:
                     new_pad.add_chart(new_chart)
 
     def save_template(self):
-        filename = filedialog.asksaveasfilename(defaultextension='.json', initialdir='os.getcwd()', title='Select file',
+
+        for i in range(len(self.app.filenames_url)):
+            self.app.filenames_url[i] = self.app.filenames_url[i].replace(os.getcwd(), '')[1:]
+
+        print(self.app.filenames_url)
+
+        filename = filedialog.asksaveasfilename(defaultextension='.json', initialfile=os.path.basename(self.template),
+                                                initialdir=self.files_dir, title='Select file',
                                                 filetypes=(('json files', '*.json'), ("All files", "*.")))
         if filename is None or filename == '':  # asksaveasfile return `None` if dialog closed with 'cancel'.
             return

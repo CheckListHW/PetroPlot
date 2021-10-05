@@ -516,7 +516,7 @@ from tkinter.filedialog import asksaveasfilename
 from tkinter.messagebox import showerror
 
 window = tk.Tk()
-window.title("Автокалибровка v1.0")
+window.title('Автокалибровка v1.0')
 
 models = []
 q = queue.Queue()
@@ -535,7 +535,7 @@ def Open_Model(self):
         Preview.insert(END, data)
         tf.close()
     except:
-        showerror(title="Ошибка входных данных", message="Проверьте входные данные и повторите попытку")
+        showerror(title='Ошибка входных данных', message='Проверьте входные данные и повторите попытку')
 
 
 def Calibrate_Model():
@@ -547,12 +547,12 @@ def Calibrate_Model():
         Success_results.insert(0, np.round(models[0].Success, 1))
         Ratio_results.insert(0, models[0].Ratio)
     except:
-        showerror(title="Ошибка расчета", message="Проверьте входные данные и повторите попытку")
+        showerror(title='Ошибка расчета', message='Проверьте входные данные и повторите попытку')
 
 
 def Save_Model(self):
     try:
-        results_path = asksaveasfilename(defaultextension=".las")
+        results_path = asksaveasfilename(defaultextension='.las')
         models[0].Write_Results(results_path=results_path)
         Save_path.insert(0, results_path)
         tf = open(results_path)
@@ -561,7 +561,7 @@ def Save_Model(self):
         Preview.insert(END, data)
         tf.close()
     except:
-        showerror(title="Ошибка сохранения", message="Не могу сохранить результаты")
+        showerror(title='Ошибка сохранения', message='Не могу сохранить результаты')
 
 
 def tb_click(self):
@@ -590,56 +590,56 @@ class ThreadedTask(threading.Thread):
 
     def run(self):
         Calibrate_Model()  # Simulate long running process
-        self.q.put("Task finished")
+        self.q.put('Task finished')
 
 
 # Parent widget for the buttons
 Mainframe = Frame(window)
 Mainframe.grid(row=0, column=0, padx=(5), pady=(5), sticky=N + W)
 
-buttons_frame = LabelFrame(Mainframe, text="Входные данные")
+buttons_frame = LabelFrame(Mainframe, text='Входные данные')
 buttons_frame.grid(row=0, column=0, padx=(5), sticky=N + W)
 
-buttons_frame2 = LabelFrame(Mainframe, text="Калибровка")
+buttons_frame2 = LabelFrame(Mainframe, text='Калибровка')
 buttons_frame2.grid(row=0, column=1, padx=(5), sticky=N + W)
 
-Open_btn = Button(buttons_frame, text="Открыть модель")
+Open_btn = Button(buttons_frame, text='Открыть модель')
 Open_btn.grid(column=0, row=0, sticky=W + E, ipady=1, pady=1)
 
 Model_path = Entry(buttons_frame, width=50)
 Model_path.grid(column=1, row=0, sticky=W + E, ipady=1, pady=1)
 
-Pc_label = Label(buttons_frame, anchor="e", justify=RIGHT, width=27,
-                 text="Pc [МПа]:").grid(column=0, row=1, ipady=1, pady=1)
+Pc_label = Label(buttons_frame, anchor='e', justify=RIGHT, width=27,
+                 text='Pc [МПа]:').grid(column=0, row=1, ipady=1, pady=1)
 
 Pc_Entry = Entry(buttons_frame, width=15)
 Pc_Entry.grid(column=1, row=1, sticky=W, ipady=1, pady=1)
 
-Pc_depth_label = Label(buttons_frame, anchor="e", justify=LEFT, width=27,
-                       text="Глубина ГРП [MD, м]:").grid(column=0, row=2, ipady=1, pady=1)
+Pc_depth_label = Label(buttons_frame, anchor='e', justify=LEFT, width=27,
+                       text='Глубина ГРП [MD, м]:').grid(column=0, row=2, ipady=1, pady=1)
 
 Pc_depth_Entry = Entry(buttons_frame, width=15)
 Pc_depth_Entry.grid(column=1, row=2, sticky=W, ipady=1, pady=1)
 
-Calibrate_btn = Button(buttons_frame2, text="Провести калибровку")
+Calibrate_btn = Button(buttons_frame2, text='Провести калибровку')
 Calibrate_btn.grid(column=0, row=0, ipady=1, pady=1)
 
 progress = Progressbar(buttons_frame2, orient=HORIZONTAL, length=320, mode='indeterminate')
 progress.grid(column=1, row=0, columnspan=2, ipady=1, pady=1)
 
-Success_label = Label(buttons_frame2, anchor="e", justify=LEFT, width=27,
-                      text="Сходимость, %:").grid(column=0, row=2, ipady=1, pady=1)
+Success_label = Label(buttons_frame2, anchor='e', justify=LEFT, width=27,
+                      text='Сходимость, %:').grid(column=0, row=2, ipady=1, pady=1)
 
 Success_results = Entry(buttons_frame2, width=15)
 Success_results.grid(column=1, row=2, sticky=W, ipady=1, pady=1)
 
-Ratio_label = Label(buttons_frame2, anchor="e", justify=LEFT, width=27,
-                    text="Соотношение напряжений:").grid(column=0, row=3, ipady=1, pady=1)
+Ratio_label = Label(buttons_frame2, anchor='e', justify=LEFT, width=27,
+                    text='Соотношение напряжений:').grid(column=0, row=3, ipady=1, pady=1)
 
 Ratio_results = Entry(buttons_frame2, width=15)
 Ratio_results.grid(column=1, row=3, sticky=W, ipady=1, pady=1)
 
-Save_btn = Button(buttons_frame2, text="Сохранить результат")
+Save_btn = Button(buttons_frame2, text='Сохранить результат')
 Save_btn.grid(column=0, row=4, ipady=1, pady=1)
 
 Save_path = Entry(buttons_frame2, width=50)
@@ -662,7 +662,16 @@ group2 = Frame(notebook)
 
 group3 = Frame(notebook)
 
-petro_chart = Window(group2)
+enter_template_name = 'Files/planshet_s_vhodnymi_dannymi(shablon).json'
+result_template_name = 'Files/Rezultaty_kalibrovki(shablon).json'
+
+open(enter_template_name, 'a').close()
+
+open(result_template_name, 'a').close()
+
+petro_chart_enter = Window(group2, template=enter_template_name)
+petro_chart_res = Window(group3, template=result_template_name)
+
 
 notebook.add(group1, text='Предварительный просмотр las файлов')
 notebook.add(group2, text='Планшет с входными данными')

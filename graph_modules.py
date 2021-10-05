@@ -65,8 +65,6 @@ class StolbGraph:
                                 break
                         break
 
-        print(self.y)
-
         self.y.append(y[-1])
         self.x = np.linspace(0, maxX, maxX)
         self.w = w
