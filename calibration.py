@@ -1,3 +1,5 @@
+import os
+
 import lasio
 import pandas as pd
 import numpy as np
@@ -662,11 +664,13 @@ group2 = Frame(notebook)
 
 group3 = Frame(notebook)
 
+if not os.path.isdir(os.getcwd() + '/Files'):
+    os.mkdir(os.getcwd() + '/Files')
+
 enter_template_name = 'Files/planshet_s_vhodnymi_dannymi(shablon).json'
-result_template_name = 'Files/Rezultaty_kalibrovki(shablon).json'
+result_template_name = 'Files/rezultaty_kalibrovki(shablon).json'
 
 open(enter_template_name, 'a').close()
-
 open(result_template_name, 'a').close()
 
 petro_chart_enter = Window(group2, template=enter_template_name)

@@ -338,7 +338,7 @@ class Window:
         self.init_dir_and_file()
 
         self.template = template if os.path.isfile(template) else None
-        self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
+        # self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
         self.i = 0
         self.time_event_mouse_scroll = 0
         self.root = root_widget
@@ -438,15 +438,13 @@ class Window:
                     new_pad.add_chart(new_chart)
 
     def save_template(self):
-
         for i in range(len(self.app.filenames_url)):
-            self.app.filenames_url[i] = self.app.filenames_url[i].replace(os.getcwd(), '')[1:]
-
-        print(self.app.filenames_url)
+            self.app.filenames_url[i] = 'Files/'+os.path.basename(self.app.filenames_url[i])
 
         filename = filedialog.asksaveasfilename(defaultextension='.json', initialfile=os.path.basename(self.template),
                                                 initialdir=self.files_dir, title='Select file',
                                                 filetypes=(('json files', '*.json'), ("All files", "*.")))
+
         if filename is None or filename == '':  # asksaveasfile return `None` if dialog closed with 'cancel'.
             return
 
@@ -689,17 +687,12 @@ class Window:
                 linewidth=0.5)
 
     def draw_row_in_pad(self, pad_number, pad_frame):
-        run_time = time.time()
-        i = 0
-
         if len(self.app.pads[pad_number].charts) == 0:
             return
 
         chart = self.app.pads[pad_number].charts[0]
         x, y = self.app.dots_range(chart.get_dots_with_border())
         main_min, main_max = np.nanmin(x + [10**10]), np.nanmax(x + [-(10**10)])
-
-        new_x = np.ma.masked_where(x == np.nan, x)
 
         borders = chart.parameters['borders'].copy()
         if len(chart.parameters['borders_color']) + 1 < len(borders):
@@ -974,7 +967,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry('1920x800+1920+0')
-    # root.geometry('1920x800+-10+0')
+    # root.geometry('1920x800+1920+0')
+    root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()
