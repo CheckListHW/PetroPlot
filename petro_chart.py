@@ -155,15 +155,13 @@ class PadFrame:
     i = 1
     def update_chart(self):
         self.i += 1
-        # if self.width.get() != int(self.fig.get_figwidth()):
-        plt.close(self.canvas.figure)
-        self.canvas_tk_widget.destroy()
-        print(self.fig.get_figheight())
-
-        self.fig.set_size_inches(self.width.get(), self.height)
-        self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
-        self.canvas_tk_widget = self.canvas.get_tk_widget()
-        self.canvas_tk_widget.pack()
+        if self.width.get() != int(self.fig.get_figwidth()):
+            plt.close(self.canvas.figure)
+            self.canvas_tk_widget.destroy()
+            self.fig.set_size_inches(self.width.get(), self.height)
+            self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
+            self.canvas_tk_widget = self.canvas.get_tk_widget()
+            self.canvas_tk_widget.pack()
         self.canvas.draw()
 
     def add_empty_cell(self, quntity_empty_cell):
