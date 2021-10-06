@@ -36,8 +36,10 @@ class Chart:
 
     def get_dots_with_border(self):
         border_dots = self.dots.copy()
+
         min_border = float(self.get_min_border())
         max_border = float(self.get_max_border())
+
         if self.get_max_border() is not None:
             for i in range(len(border_dots)):
                 border_dots[i] = max_border if border_dots[i] > max_border else border_dots[i]
@@ -65,7 +67,7 @@ class Chart:
             value = self.parameters.get('min_border')
         if str(value).isdigit():
             return value
-        return -math.inf
+        return float(-math.inf)
 
     def get_max_border(self):
         if self.max_border is not None:
@@ -74,7 +76,7 @@ class Chart:
             value = self.parameters.get('max_border')
         if str(value).isdigit():
             return value
-        return math.inf
+        return float(math.inf)
 
 
 class Cell:
@@ -126,14 +128,16 @@ class Pad:
 
 
 class PadFrame:
+    height = 8
+
     def __init__(self, pads_frame, width=None):
         self.cell = []
         self.width = IntVar(value=3) if width is None else width
-        self.fig, self.chart = plt.subplots(nrows=1, ncols=1, figsize=(self.width.get(), 8))
+        self.fig, self.chart = plt.subplots(nrows=1, ncols=1, figsize=(self.width.get(), self.height))
         self.fig.subplots_adjust(left=-0.003, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
         self.pad_frame = Frame(pads_frame)
-        self.pad_frame.pack(side=LEFT)
+        self.pad_frame.pack(side=LEFT, fill='both')
 
         self.cell_frame = Frame(self.pad_frame)  # , text='cell_frame')
         self.cell_frame.pack(side=TOP, fill='both')
@@ -145,17 +149,21 @@ class PadFrame:
         self.canvas_frame.pack(side=TOP, fill='both')
 
         self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
-        self.canvas_get_tk_widget = self.canvas.get_tk_widget()
-        self.canvas_get_tk_widget.pack(side=BOTTOM)
+        self.canvas_tk_widget = self.canvas.get_tk_widget()
+        self.canvas_tk_widget.pack(side=BOTTOM)
 
+    i = 1
     def update_chart(self):
-        if self.width != self.fig.get_figwidth():
-            self.canvas_get_tk_widget.destroy()
-            plt.close(self.canvas.figure)
-            self.fig.set_size_inches(self.width.get(), self.fig.get_figheight())
-            self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
-            self.canvas_get_tk_widget = self.canvas.get_tk_widget()
-            self.canvas_get_tk_widget.pack()
+        self.i += 1
+        # if self.width.get() != int(self.fig.get_figwidth()):
+        plt.close(self.canvas.figure)
+        self.canvas_tk_widget.destroy()
+        print(self.fig.get_figheight())
+
+        self.fig.set_size_inches(self.width.get(), self.height)
+        self.canvas = FigureCanvasTkAgg(self.fig, self.canvas_frame)
+        self.canvas_tk_widget = self.canvas.get_tk_widget()
+        self.canvas_tk_widget.pack()
         self.canvas.draw()
 
     def add_empty_cell(self, quntity_empty_cell):
@@ -338,7 +346,7 @@ class Window:
         self.init_dir_and_file()
 
         self.template = template if os.path.isfile(template) else None
-        # self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
+        self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
         self.i = 0
         self.time_event_mouse_scroll = 0
         self.root = root_widget
@@ -621,7 +629,7 @@ class Window:
             pad_frame.chart.set_xscale('log')
 
         main_min = 10**10
-        main_max = -(10**10)
+        main_max = -main_min
 
         for chart in self.app.pads[pad_number].charts:
             x, y = self.app.dots_range(chart.get_dots_with_border())
@@ -631,12 +639,13 @@ class Window:
 
             chart_line = pad_frame.chart.plot(x, y, color=chart.parameters['color'])
 
-            new_x = np.ma.masked_where(x > main_min, x)
+            new_x = np.ma.masked_where(x > np.float64(chart.get_min_border()), x)
             pad_frame.chart.plot(new_x, y, linestyle=':',
                                  linewidth=2,
                                  color='white', clip_on=True)
 
-            new_x = np.ma.masked_where(x < main_max, x)
+
+            new_x = np.ma.masked_where(x < np.float64(chart.get_max_border()), x)
             pad_frame.chart.plot(new_x, y, linestyle=':',
                                  linewidth=2,
                                  color='white', clip_on=True)
@@ -667,8 +676,11 @@ class Window:
 
             pad_frame.chart.set_ylim(self.app.end, self.app.start)
 
-            chart_border = abs(main_min - main_max) * 0.02
+        chart_border = abs(main_min - main_max) * 0.02
 
+        if main_min == main_max:
+            pad_frame.chart.set_xlim(main_min - 1, main_max + 1)
+        else:
             pad_frame.chart.set_xlim(main_min - chart_border, main_max + chart_border)
 
         pad_frame.add_empty_cell(self.app.max_pads_cells() - len(self.app.pads[pad_number].charts))
@@ -967,7 +979,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    # root.geometry('1920x800+1920+0')
-    root.geometry('1920x800+-10+0')
+    root.geometry('1920x800+1920+0')
+    # root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()
