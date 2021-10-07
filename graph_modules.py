@@ -42,7 +42,7 @@ class StolbGraph:
         # self.color.append(colorLine[0])
 
         step = 0
-        borders = list(borders)
+        borders = sorted(list(borders))
         len_x = len(x)
 
         while step < len_x:
@@ -69,12 +69,13 @@ class StolbGraph:
         self.x = np.linspace(0, maxX, maxX)
         self.w = w
         self.h = h
+        print(self.x, self.y)
+        print(borders)
 
 
     def draw(self):
         if self.fig is None or self.ax is None:
             self.fig, self.ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 8))
-
 
         for i in range(0, len(self.y) - 1):
             self.ax.fill_between(self.x, self.y[i], self.y[i + 1], color=self.color[i])

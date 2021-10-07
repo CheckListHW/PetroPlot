@@ -344,7 +344,7 @@ class Window:
         self.init_dir_and_file()
 
         self.template = template if os.path.isfile(template) else None
-        self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
+        # self.template = '/home/dev/PycharmProjects/petro_chart/Files/linux_test.json'
         self.i = 0
         self.time_event_mouse_scroll = 0
         self.root = root_widget
@@ -769,7 +769,10 @@ class Window:
         self.update_pad_edit_window(pad_number)
 
     def pop_border_from_pad(self, pad_number, value):
+        print(self.app.pads[pad_number].charts[0].parameters['borders'])
         self.app.pads[pad_number].charts[0].parameters['borders'].remove(value)
+        print(self.app.pads[pad_number].charts[0].parameters['borders'])
+        self.show_pad_settings_window(pad_number)
         self.update_pad_edit_window(pad_number)
 
     def add_pad_border(self, pad_number, value):
@@ -977,7 +980,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry('1920x800+1920+0')
-    # root.geometry('1920x800+-10+0')
+    # root.geometry('1920x800+1920+0')
+    root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()

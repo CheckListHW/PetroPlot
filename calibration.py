@@ -605,6 +605,12 @@ buttons_frame.grid(row=0, column=0, padx=(5), sticky=N + W)
 buttons_frame2 = LabelFrame(Mainframe, text='Калибровка')
 buttons_frame2.grid(row=0, column=1, padx=(5), sticky=N + W)
 
+buttons_frame3 = LabelFrame(Mainframe, text='Дополнительно')
+buttons_frame3.grid(row=0, column=2, padx=(5), sticky=N + W)
+
+Open_btn_line = Button(buttons_frame3, text='Просмотр кривых')
+Open_btn_line.grid(column=0, row=0, sticky=W + E, ipady=1, pady=1)
+
 Open_btn = Button(buttons_frame, text='Открыть модель')
 Open_btn.grid(column=0, row=0, sticky=W + E, ipady=1, pady=1)
 
@@ -676,7 +682,6 @@ open(result_template_name, 'a').close()
 petro_chart_enter = Window(group2, template=enter_template_name)
 petro_chart_res = Window(group3, template=result_template_name)
 
-
 notebook.add(group1, text='Предварительный просмотр las файлов')
 notebook.add(group2, text='Планшет с входными данными')
 notebook.add(group3, text='Результаты калибровки')
@@ -690,7 +695,13 @@ group1.columnconfigure(0, weight=1)
 Preview = ScrolledText(group1, wrap=WORD)
 Preview.grid(column=0, row=0, sticky=E + S + N + W)
 
+
+def open_window(args):
+    root = Tk()
+    Window(root)
+
 Open_btn.bind('<Button-1>', Open_Model)
+Open_btn_line.bind('<Button-1>', open_window)
 Calibrate_btn.bind('<Button-1>', tb_click)
 Save_btn.bind('<Button-1>', Save_Model)
 
