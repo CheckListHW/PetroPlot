@@ -69,8 +69,6 @@ class StolbGraph:
         self.x = np.linspace(0, maxX, maxX)
         self.w = w
         self.h = h
-        print(self.x, self.y)
-        print(borders)
 
 
     def draw(self):

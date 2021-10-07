@@ -1,1 +1,124 @@
-{"files": ["Files/148R.las"], "pads": [{"log": false, "type": "row", "line_quantity": "5", "charts": [{"name": "'DEPT' 148R", "color": "blue", "type": "line", "borders": [2000.0, -Infinity, 2500.0, 1500.0, Infinity], "min_border": -Infinity, "max_border": Infinity, "borders_color": ["#bcbd22", "#f7b6d2", "#17becf", "#ff7f0e"], "fill_side": "right"}], "width": 3}, {"log": false, "type": "row", "line_quantity": "5", "charts": [{"name": "'DEPT' 148R", "color": "blue", "type": "line", "borders": [1000.0, 3500.0, Infinity, 2000.0, -Infinity, 3000.0, 1500.0], "min_border": -Infinity, "max_border": Infinity, "borders_color": ["#9467bd", "#aec7e8", "#7f7f7f", "#17becf", "#9edae5", "#1f77b4", "#7f7f7f"], "fill_side": "right"}], "width": 3}]}
+{
+  "files": [
+    "Files/148R.las"
+  ],
+  "pads": [
+    {
+      "log": false,
+      "type": "row",
+      "border_scale_fixed": false,
+      "line_quantity": "5",
+      "charts": [
+        {
+          "name": "'CO_BEFORE_CALIBRATION' 148R",
+          "color": "blue",
+          "type": "line",
+          "borders": [
+            -Infinity,
+            50.0,
+            100.0,
+            Infinity
+          ],
+          "min_border": -Infinity,
+          "max_border": Infinity,
+          "borders_color": [
+            "#aec7e8",
+            "#aec7e8",
+            "#ff7f0e"
+          ],
+          "fill_side": "right"
+        }
+      ],
+      "width": 3
+    },
+    {
+      "log": false,
+      "type": "line",
+      "border_scale_fixed": true,
+      "line_quantity": "5",
+      "charts": [
+        {
+          "name": "'CO_BEFORE_CALIBRATION' 148R",
+          "color": "black",
+          "type": "line",
+          "borders": [
+            -Infinity,
+            Infinity
+          ],
+          "min_border": -Infinity,
+          "max_border": "700",
+          "borders_color": [
+            "b"
+          ],
+          "fill_side": "right"
+        }
+      ],
+      "width": 3
+    },
+    {
+      "log": false,
+      "type": "row",
+      "border_scale_fixed": false,
+      "line_quantity": "5",
+      "charts": [
+        {
+          "name": "'DEPT' 148R",
+          "color": "blue",
+          "type": "line",
+          "borders": [
+            2000.0,
+            -Infinity,
+            2500.0,
+            1500.0,
+            Infinity
+          ],
+          "min_border": -Infinity,
+          "max_border": Infinity,
+          "borders_color": [
+            "#bcbd22",
+            "#f7b6d2",
+            "#17becf",
+            "#ff7f0e"
+          ],
+          "fill_side": "right"
+        }
+      ],
+      "width": 3
+    },
+    {
+      "log": false,
+      "type": "row",
+      "border_scale_fixed": false,
+      "line_quantity": "5",
+      "charts": [
+        {
+          "name": "'DEPT' 148R",
+          "color": "blue",
+          "type": "line",
+          "borders": [
+            1000.0,
+            3500.0,
+            Infinity,
+            2000.0,
+            -Infinity,
+            3000.0,
+            1500.0
+          ],
+          "min_border": -Infinity,
+          "max_border": Infinity,
+          "borders_color": [
+            "#9467bd",
+            "#aec7e8",
+            "#7f7f7f",
+            "#17becf",
+            "#9edae5",
+            "#1f77b4",
+            "#7f7f7f"
+          ],
+          "fill_side": "right"
+        }
+      ],
+      "width": 3
+    }
+  ]
+}

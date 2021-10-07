@@ -66,7 +66,7 @@ class Chart:
         elif self.parameters.get('min_border') is not None:
             value = self.parameters.get('min_border')
         if str(value).isdigit():
-            return value
+            return float(value)
         return float(-math.inf)
 
     def get_max_border(self):
@@ -75,7 +75,7 @@ class Chart:
         elif self.parameters.get('max_border') is not None:
             value = self.parameters.get('max_border')
         if str(value).isdigit():
-            return value
+            return float(value)
         return float(math.inf)
 
 
@@ -115,6 +115,8 @@ class Cell:
 class Pad:
     def __init__(self, frame):
         self.log = BooleanVar(frame, value=0)
+
+        self.border_scale_fixed = BooleanVar(frame, value=0)
 
         self.type = StringVar(frame, value='line')
 
@@ -369,10 +371,10 @@ class Window:
 
     def debug(self):
         self.progress_bar_start()
-        if self.template is not None:
-            filename = self.template
 
-            self.load_template(filename)
+        if self.template is None:
+            self.template = 'Files/rezultaty_kalibrovki(shablon).json'
+            self.load_template(self.template)
 
         self.progress_bar_stop()
 
@@ -405,7 +407,6 @@ class Window:
 
     @staticmethod
     def is_file_json(filename):
-        print(filename)
         try:
             with open(filename) as f:
                 json_object = json.load(f)
@@ -425,10 +426,11 @@ class Window:
 
             for pad in template['pads']:
                 new_pad = self.app.add_pad()
-                new_pad.log.set(pad['log'])
-                new_pad.type.set(pad['type'])
-                new_pad.line_quantity.set(pad['line_quantity'])
-                new_pad.width.set(pad['width'])
+                new_pad.log.set(pad.get('log'))
+                new_pad.type.set(pad.get('type'))
+                new_pad.border_scale_fixed.set(pad.get('border_scale_fixed'))
+                new_pad.line_quantity.set(pad.get('line_quantity'))
+                new_pad.width.set(pad.get('width'))
                 for chart in pad['charts']:
                     new_chart = Chart(self.app.curves[chart['name']].get('dots'),
                                       name=chart.get('name'),
@@ -442,6 +444,7 @@ class Window:
                                       unit=self.app.curves.get(chart.get('name')).get('unit'))
 
                     new_pad.add_chart(new_chart)
+            self.template = filename
 
     def save_template(self):
         for i in range(len(self.app.filenames_url)):
@@ -457,7 +460,7 @@ class Window:
         main_json = {'files': self.app.filenames_url, 'pads': []}
 
         for pad in self.app.pads:
-            pad_info = {'log': pad.log.get(), 'type': pad.type.get(),
+            pad_info = {'log': pad.log.get(), 'type': pad.type.get(), 'border_scale_fixed': pad.border_scale_fixed.get(),
                         'line_quantity': pad.line_quantity.get(), 'charts': [], 'width': pad.width.get()}
 
             for chart in pad.charts:
@@ -634,6 +637,14 @@ class Window:
 
             main_min = np.nanmin(x + [main_min])
             main_max = np.nanmax(x + [main_max])
+            print(self.app.pads[pad_number].border_scale_fixed.get())
+
+            if self.app.pads[pad_number].border_scale_fixed.get():
+                new_min = chart.get_min_border()
+                main_min = main_min if math.isinf(new_min) or math.isnan(new_min) else new_min
+
+                new_max = chart.get_max_border()
+                main_max = main_max if math.isinf(new_max) or math.isnan(new_min) else new_max
 
             chart_line = pad_frame.chart.plot(x, y, color=chart.parameters['color'])
 
@@ -769,9 +780,7 @@ class Window:
         self.update_pad_edit_window(pad_number)
 
     def pop_border_from_pad(self, pad_number, value):
-        print(self.app.pads[pad_number].charts[0].parameters['borders'])
         self.app.pads[pad_number].charts[0].parameters['borders'].remove(value)
-        print(self.app.pads[pad_number].charts[0].parameters['borders'])
         self.show_pad_settings_window(pad_number)
         self.update_pad_edit_window(pad_number)
 
@@ -907,6 +916,12 @@ class Window:
         Label(pad_log, text='Логарифмическая шкала').pack(side=LEFT)
         Checkbutton(pad_log, variable=self.app.pads[pad_number].log).pack(side=LEFT)
 
+        pad_border = Frame(chart_styles)
+        pad_border.pack(side=TOP)
+
+        Label(pad_border, text='Фиксированные границы').pack(side=LEFT)
+        Checkbutton(pad_border, variable=self.app.pads[pad_number].border_scale_fixed).pack(side=LEFT)
+
         pad_grid = Frame(chart_styles)
         pad_grid.pack(side=TOP)
 
@@ -980,7 +995,7 @@ class Window:
 
 if __name__ == '__main__':
     root = Tk()
-    # root.geometry('1920x800+1920+0')
-    root.geometry('1920x800+-10+0')
+    root.geometry('1920x800+1920+0')
+    # root.geometry('1920x800+-10+0')
     window = Window(root)
     window.root.mainloop()
