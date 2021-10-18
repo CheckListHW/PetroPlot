@@ -229,7 +229,6 @@ class Model():
               Tensile_Strength, Well_azimuth_input, Well_deviation_input, TVD):
 
         self.progress_iterator += 1
-        #            print(self.progress_iterator)
 
         Transformed_Stress = self.Transform_Stress(Sv=Sv, SHmax=SHmax, Shmin=Shmin, SHmax_azimuth=SHmax_azimuth,
                                                    Well_azimuth_input=Well_azimuth_input,

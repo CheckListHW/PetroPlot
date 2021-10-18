@@ -637,7 +637,6 @@ class Window:
 
             main_min = np.nanmin(x + [main_min])
             main_max = np.nanmax(x + [main_max])
-            print(self.app.pads[pad_number].border_scale_fixed.get())
 
             if self.app.pads[pad_number].border_scale_fixed.get():
                 new_min = chart.get_min_border()
